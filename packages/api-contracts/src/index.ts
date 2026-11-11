@@ -5,3 +5,4 @@ export * from './rbac.dto.js';
 export * from './master-data.dto.js';
 export * from './attendance.dto.js';
 export * from './finance.dto.js';
+export * from './academics.dto.js';

@@ -37,8 +37,9 @@ Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan 
 * **Cakupan**: Tagihan SPP berkala, uang gedung, infak santri, integrasi sandbox QRIS/VA, struk digital, pencatatan jurnal umum kas.
 
 ### [Phase 5] Academic Management, Dual Curricula & PDF Report Cards
-* **Status**: `NOT_STARTED`
-* **Cakupan**: Kurikulum formal Kemendikbud/Kemenag, kurikulum diniyah pesantren, input nilai harian/ujian, cetak Rapor PDF otomatis.
+* **Status**: `VERIFIED`
+* **Bukti**: 19 unit test suites NestJS lolos (66/66 tests), kalkulasi bobot otomatis kurikulum ganda (Kemendikbud & Diniyah Pesantren), generator narasi capaian kompetensi & predikat Mumtaz/Jayyid, batch grade entry untuk rombel sekelas terpadu, generator buku rapor digital santri dengan ranking kelas otomatis & integrasi rekap presensi semester, endpoint cetak rapor resmi HTML/PDF berstempel digital; Web portal nilai & rapor lengkap di React; Dart models, service & screen di Flutter (0 issues di Flutter analyze, widget test lulus).
+* **Cakupan**: Kurikulum formal Kemendikbud/Kemenag, kurikulum diniyah pesantren, input nilai harian/ujian, kalkulasi bobot & ranking kelas, cetak Rapor PDF/HTML resmi otomatis.
 
 ### [Phase 6] Learning Management System (LMS) & Online Examinations
 * **Status**: `NOT_STARTED`

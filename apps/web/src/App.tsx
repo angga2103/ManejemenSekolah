@@ -8,12 +8,13 @@ import { DashboardPrototypes } from './pages/dashboards/DashboardPrototypes';
 import { StudentsPage } from './pages/students/StudentsPage';
 import { AttendancePage } from './pages/attendance/AttendancePage';
 import { FinancePage } from './pages/finance/FinancePage';
+import { AcademicsPage } from './pages/academics/AcademicsPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainAppContent: React.FC = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [currentRole, setCurrentRole] = useState<string>('principal');
-  const [activeTab, setActiveTab] = useState<string>('attendance');
+  const [activeTab, setActiveTab] = useState<string>('academics');
   const [authView, setAuthView] = useState<'login' | 'register-tenant'>('login');
 
   // Sync role with user activeRole if authenticated
@@ -70,6 +71,8 @@ const MainAppContent: React.FC = () => {
             <AttendancePage />
           ) : activeTab === 'finance' || activeTab === 'billing' || activeTab === 'verification' || activeTab === 'journals' ? (
             <FinancePage />
+          ) : activeTab === 'academics' || activeTab === 'grading' || activeTab === 'report' ? (
+            <AcademicsPage />
           ) : (
             <DashboardPrototypes role={currentRole} />
           )}
