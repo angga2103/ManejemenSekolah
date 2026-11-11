@@ -178,6 +178,11 @@ export enum PaymentStatus {
   EXPIRED = 'EXPIRED'
 }
 
+export enum JournalLineType {
+  DEBIT = 'DEBIT',
+  CREDIT = 'CREDIT'
+}
+
 // -----------------------------------------------------------------------------
 // 6. ACADEMIC & PESANTREN ENUMS
 // -----------------------------------------------------------------------------

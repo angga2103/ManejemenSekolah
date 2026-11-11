@@ -7,6 +7,7 @@ import { Sidebar } from './components/layout/Sidebar';
 import { DashboardPrototypes } from './pages/dashboards/DashboardPrototypes';
 import { StudentsPage } from './pages/students/StudentsPage';
 import { AttendancePage } from './pages/attendance/AttendancePage';
+import { FinancePage } from './pages/finance/FinancePage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainAppContent: React.FC = () => {
@@ -67,6 +68,8 @@ const MainAppContent: React.FC = () => {
             <StudentsPage />
           ) : activeTab === 'attendance' ? (
             <AttendancePage />
+          ) : activeTab === 'finance' || activeTab === 'billing' || activeTab === 'verification' || activeTab === 'journals' ? (
+            <FinancePage />
           ) : (
             <DashboardPrototypes role={currentRole} />
           )}

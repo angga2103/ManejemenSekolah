@@ -19,6 +19,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           { id: 'tenants', name: 'Manajemen Tenant', icon: '🏫' },
           { id: 'students', name: 'Data Induk Santri', icon: '👥' },
           { id: 'attendance', name: 'Monitoring Presensi', icon: '📅' },
+          { id: 'finance', name: 'Keuangan & SPP', icon: '💰' },
           { id: 'subscriptions', name: 'Paket & Langganan', icon: '💳' },
           { id: 'health', name: 'Kesehatan Server', icon: '⚡' },
           { id: 'audit', name: 'Audit Security Log', icon: '🛡️' },
