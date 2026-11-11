@@ -9,3 +9,4 @@ export * from './academics.dto.js';
 export * from './lms.dto.js';
 export * from './cbt.dto.js';
 export * from './pesantren.dto.js';
+export * from './communication.dto.js';

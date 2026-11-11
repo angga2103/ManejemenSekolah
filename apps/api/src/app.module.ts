@@ -14,6 +14,7 @@ import { AcademicsModule } from './modules/academics/academics.module';
 import { LmsModule } from './modules/lms/lms.module';
 import { CbtModule } from './modules/cbt/cbt.module';
 import { PesantrenModule } from './modules/pesantren/pesantren.module';
+import { CommunicationModule } from './modules/communication/communication.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { TenantMiddleware } from './common/tenant/tenant.middleware';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -40,6 +41,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     LmsModule,
     CbtModule,
     PesantrenModule,
+    CommunicationModule,
   ],
   providers: [
     {

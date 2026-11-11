@@ -52,8 +52,9 @@ Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan 
 * **Cakupan**: Pembagian kamar asrama, penugasan musyrif, log setoran ziyadah & muroja'ah tahfiz, izin santri keluar asrama & verifikasi token gerbang keamanan.
 
 ### [Phase 8] Communication Center & Student Development
-* **Status**: `NOT_STARTED`
-* **Cakupan**: Tiket keluhan rahasia orang tua, rekam poin pelanggaran & prestasi, buku catatan Bimbingan Konseling (BK) berproteksi khusus.
+* **Status**: `VERIFIED`
+* **Bukti**: 27 unit test suites NestJS lolos (105/105 tests), sistem akumulasi poin pelanggaran santri dengan kalkulasi sanksi otomatis (SP1 >= 25, SP2 >= 50, SP3/Panggilan Wali >= 75) dan auto-dispatch notifikasi darurat wali murid, pencatatan rekam prestasi berjenjang (Internal s/d Internasional) dengan lampiran sertifikat digital, modul Bimbingan Konseling (BK) berproteksi akses rahasia per kategori (Akademik, Perilaku, Keluarga, Pribadi, Karier) beserta rencana aksi & flag follow-up, meja pengaduan keluhan rahasia wali murid & santri dengan pelacakan status tiket (Open, In Progress, Resolved, Closed); Antarmuka Web Communication Hub lengkap di React dengan 4 sub-tab & modal interaktif; Dart models, service & mobile hub screen di Flutter (0 issues di Flutter analyze, widget test lulus, Monorepo build clean).
+* **Cakupan**: Tiket keluhan rahasia orang tua, rekam poin pelanggaran & prestasi, buku catatan Bimbingan Konseling (BK) berproteksi khusus, pengumuman lembaga & notifikasi darurat wali.
 
 ### [Phase 9] SaaS Subscription & Developer Control Center
 * **Status**: `NOT_STARTED`

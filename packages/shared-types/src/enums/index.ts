@@ -306,3 +306,50 @@ export enum PesantrenPermitStatus {
   RETURNED = 'RETURNED',
   OVERDUE = 'OVERDUE'
 }
+
+// -----------------------------------------------------------------------------
+// 11. DISCIPLINE, COUNSELING & COMMUNICATION ENUMS
+// -----------------------------------------------------------------------------
+export enum ComplaintPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT'
+}
+
+export enum ComplaintStatus {
+  OPEN = 'OPEN',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RESOLVED = 'RESOLVED',
+  CLOSED = 'CLOSED'
+}
+
+export enum ViolationLevel {
+  RINGAN = 'RINGAN',
+  SEDANG = 'SEDANG',
+  BERAT = 'BERAT'
+}
+
+export enum SanctionLetterType {
+  NONE = 'NONE',
+  SP1 = 'SP1',
+  SP2 = 'SP2',
+  SP3_CALL_PARENT = 'SP3_CALL_PARENT'
+}
+
+export enum CounselingCategory {
+  ACADEMIC = 'ACADEMIC',
+  BEHAVIORAL = 'BEHAVIORAL',
+  FAMILY = 'FAMILY',
+  PERSONAL = 'PERSONAL',
+  CAREER = 'CAREER'
+}
+
+export enum AchievementLevel {
+  INTERNAL = 'INTERNAL',
+  KECAMATAN = 'KECAMATAN',
+  KABUPATEN = 'KABUPATEN',
+  PROVINSI = 'PROVINSI',
+  NASIONAL = 'NASIONAL',
+  INTERNASIONAL = 'INTERNASIONAL'
+}
