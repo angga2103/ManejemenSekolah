@@ -274,6 +274,222 @@ async function main() {
     }
   }
 
+  // 5. SEED MASTER DATA (INSTITUTIONS, CLASSES, SUBJECTS, STUDENTS & GUARDIANS)
+  console.log('📚 Seeding master data (institutions, classes, subjects, students)...');
+
+  // A. Institutions
+  const formalInst = await prisma.institution.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: 'SMA-IT' } },
+    create: {
+      tenantId: tenant.id,
+      name: 'SMA IT Al-Hikmah Digital',
+      code: 'SMA-IT',
+      npsn: '20109988',
+      type: 'FORMAL_SCHOOL',
+    },
+    update: {},
+  });
+
+  const pesInst = await prisma.institution.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: 'PONTREN' } },
+    create: {
+      tenantId: tenant.id,
+      name: 'Pondok Pesantren Al-Hikmah',
+      code: 'PONTREN',
+      npsn: '51003201',
+      type: 'PESANTREN',
+    },
+    update: {},
+  });
+
+  // B. Academic Year
+  const academicYear = await prisma.academicYear.upsert({
+    where: { id: '00000000-0000-0000-0000-000000000001' },
+    create: {
+      id: '00000000-0000-0000-0000-000000000001',
+      tenantId: tenant.id,
+      name: '2026/2027 Ganjil',
+      semester: 'ODD',
+      startDate: new Date('2026-07-15'),
+      endDate: new Date('2026-12-20'),
+      isActive: true,
+    },
+    update: { isActive: true },
+  });
+
+  // C. Class Groups
+  const class10A = await prisma.classGroup.upsert({
+    where: { id: '00000000-0000-0000-0000-000000000010' },
+    create: {
+      id: '00000000-0000-0000-0000-000000000010',
+      tenantId: tenant.id,
+      institutionId: formalInst.id,
+      academicYearId: academicYear.id,
+      name: '10 MIPA 1',
+      gradeLevel: 10,
+    },
+    update: {},
+  });
+
+  const classUla = await prisma.classGroup.upsert({
+    where: { id: '00000000-0000-0000-0000-000000000020' },
+    create: {
+      id: '00000000-0000-0000-0000-000000000020',
+      tenantId: tenant.id,
+      institutionId: pesInst.id,
+      academicYearId: academicYear.id,
+      name: 'Ula A - Kitab Kuning',
+      gradeLevel: 1,
+    },
+    update: {},
+  });
+
+  // D. Subjects
+  const subjects = [
+    { name: 'Matematika Peminatan', code: 'MTK-MIPA', instId: formalInst.id, type: 'FORMAL_NATIONAL' },
+    { name: 'Fisika Dasar', code: 'FIS-10', instId: formalInst.id, type: 'FORMAL_NATIONAL' },
+    { name: 'Bahasa Arab Fusha', code: 'ARB-01', instId: pesInst.id, type: 'PESANTREN_DINIYAH' },
+    { name: 'Fiqih (Fathul Qorib)', code: 'FIQ-01', instId: pesInst.id, type: 'PESANTREN_DINIYAH' },
+    { name: 'Nahwu & Shorof', code: 'NAH-01', instId: pesInst.id, type: 'PESANTREN_DINIYAH' },
+  ];
+
+  for (const s of subjects) {
+    await prisma.subject.upsert({
+      where: { tenantId_code: { tenantId: tenant.id, code: s.code } },
+      create: {
+        tenantId: tenant.id,
+        institutionId: s.instId,
+        name: s.name,
+        code: s.code,
+        curriculumType: s.type,
+      },
+      update: {},
+    });
+  }
+
+  // E. Students & Guardians with 1:N and N:M Relationships
+  const student1 = await prisma.student.upsert({
+    where: { tenantId_nis: { tenantId: tenant.id, nis: '20261001' } },
+    create: {
+      tenantId: tenant.id,
+      nis: '20261001',
+      nisn: '0081234567',
+      nik: '3201012345670001',
+      fullName: 'Ahmad Bilal Al-Ghifari',
+      gender: 'MALE',
+      birthPlace: 'Jakarta',
+      birthDate: new Date('2010-04-12'),
+      admissionYear: 2026,
+      status: 'ACTIVE',
+    },
+    update: {},
+  });
+
+  const student2 = await prisma.student.upsert({
+    where: { tenantId_nis: { tenantId: tenant.id, nis: '20261002' } },
+    create: {
+      tenantId: tenant.id,
+      nis: '20261002',
+      nisn: '0081234568',
+      nik: '3201012345670002',
+      fullName: 'Muhammad Yusuf Mansur',
+      gender: 'MALE',
+      birthPlace: 'Bandung',
+      birthDate: new Date('2010-06-20'),
+      admissionYear: 2026,
+      status: 'ACTIVE',
+    },
+    update: {},
+  });
+
+  const student3 = await prisma.student.upsert({
+    where: { tenantId_nis: { tenantId: tenant.id, nis: '20261003' } },
+    create: {
+      tenantId: tenant.id,
+      nis: '20261003',
+      nisn: '0081234569',
+      nik: '3201012345670003',
+      fullName: 'Siti Fatimah Azzahra',
+      gender: 'FEMALE',
+      birthPlace: 'Surabaya',
+      birthDate: new Date('2010-08-15'),
+      admissionYear: 2026,
+      status: 'ACTIVE',
+    },
+    update: {},
+  });
+
+  // Assign students to classes
+  await prisma.classStudent.upsert({
+    where: { classGroupId_studentId: { classGroupId: class10A.id, studentId: student1.id } },
+    create: { classGroupId: class10A.id, studentId: student1.id },
+    update: {},
+  });
+  await prisma.classStudent.upsert({
+    where: { classGroupId_studentId: { classGroupId: class10A.id, studentId: student2.id } },
+    create: { classGroupId: class10A.id, studentId: student2.id },
+    update: {},
+  });
+  await prisma.classStudent.upsert({
+    where: { classGroupId_studentId: { classGroupId: classUla.id, studentId: student3.id } },
+    create: { classGroupId: classUla.id, studentId: student3.id },
+    update: {},
+  });
+
+  // Guardian 1: H. Suryadi Rahman (User account already seeded above)
+  const guardianUser = await prisma.user.findFirst({
+    where: { tenantId: tenant.id, email: 'wali@alhikmah.sch.id' },
+  });
+
+  if (guardianUser) {
+    const guardian = await prisma.guardian.upsert({
+      where: { userId: guardianUser.id },
+      create: {
+        tenantId: tenant.id,
+        userId: guardianUser.id,
+        fullName: guardianUser.fullName,
+        phone: guardianUser.phone || '081234567897',
+        nik: '3201011111110001',
+        occupation: 'Wiraswasta / Pengusaha',
+        address: 'Jl. Melati No. 45, Jakarta Selatan',
+      },
+      update: {},
+    });
+
+    // 1 Guardian -> Multiple Students (Ahmad Bilal & Siti Fatimah are siblings)
+    await prisma.studentGuardian.upsert({
+      where: { studentId_guardianId: { studentId: student1.id, guardianId: guardian.id } },
+      create: {
+        tenantId: tenant.id,
+        studentId: student1.id,
+        guardianId: guardian.id,
+        relationshipType: 'FATHER',
+        isPrimary: true,
+        hasFinancialAccess: true,
+        isEmergencyContact: true,
+        receivePush: true,
+        receiveWhatsapp: true,
+      },
+      update: {},
+    });
+
+    await prisma.studentGuardian.upsert({
+      where: { studentId_guardianId: { studentId: student3.id, guardianId: guardian.id } },
+      create: {
+        tenantId: tenant.id,
+        studentId: student3.id,
+        guardianId: guardian.id,
+        relationshipType: 'FATHER',
+        isPrimary: true,
+        hasFinancialAccess: true,
+        isEmergencyContact: true,
+        receivePush: true,
+        receiveWhatsapp: true,
+      },
+      update: {},
+    });
+  }
+
   console.log('🎉 Database seed completed successfully!');
   console.log('---------------------------------------------------------');
   console.log('Demo Credentials for all accounts:');
