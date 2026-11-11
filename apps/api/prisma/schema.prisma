@@ -61,6 +61,17 @@ model Tenant {
   billingCategories BillingCategory[]
   dormitories       Dormitory[]
   tahfizRecords     TahfizRecord[]
+  leaveRequests     LeaveRequest[]
+  cashAccounts      CashAccount[]
+  journalEntries    JournalEntry[]
+  grades            Grade[]
+  reportCards       ReportCard[]
+  counselingRecords CounselingRecord[]
+  violations        StudentViolation[]
+  achievements      StudentAchievement[]
+  announcements     Announcement[]
+  complaintTickets  ComplaintTicket[]
+  halaqahGroups     HalaqahGroup[]
   auditLogs         AuditLog[]
 
   @@map("tenants")
@@ -122,13 +133,14 @@ model User {
   updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  userRoles     UserRole[]
-  refreshTokens RefreshToken[]
-  student       Student?
-  guardian      Guardian?
-  employee      Employee?
-  auditLogs     AuditLog[]
+  tenant           Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  userRoles        UserRole[]
+  refreshTokens    RefreshToken[]
+  student          Student?
+  guardian         Guardian?
+  employee         Employee?
+  complaintTickets ComplaintTicket[]
+  auditLogs        AuditLog[]
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -298,8 +310,10 @@ model AcademicYear {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  tenant  Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  classes ClassGroup[]
+  tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  classes     ClassGroup[]
+  grades      Grade[]
+  reportCards ReportCard[]
 
   @@index([tenantId, isActive])
   @@map("academic_years")
@@ -321,6 +335,7 @@ model ClassGroup {
   academicYear    AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
   homeroomTeacher Employee?      @relation(fields: [homeroomTeacherId], references: [id], onDelete: SetNull)
   classStudents   ClassStudent[]
+  reportCards     ReportCard[]
 
   @@map("class_groups")
 }
@@ -342,6 +357,10 @@ model Employee {
   homeroomClasses    ClassGroup[]
   musyrifAssignments MusyrifAssignment[]
   tahfizMentored     TahfizRecord[]
+  approvedLeaves     LeaveRequest[]      @relation("ApprovedLeaves")
+  counselingSessions CounselingRecord[]  @relation("CounselorSessions")
+  violationsRecorded StudentViolation[]  @relation("RecordedViolations")
+  halaqahSupervised  HalaqahGroup[]      @relation("SupervisedHalaqah")
 
   @@unique([tenantId, nip])
   @@map("employees")
@@ -364,14 +383,21 @@ model Student {
   updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
   deletedAt     DateTime?     @map("deleted_at") @db.Timestamptz(6)
 
-  tenant          Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  user            User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  tenant          Tenant               @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   guardians       StudentGuardian[]
   classStudents   ClassStudent[]
   attendances     Attendance[]
   invoices        Invoice[]
   dormAllocations DormAllocation[]
   tahfizRecords   TahfizRecord[]
+  leaveRequests   LeaveRequest[]
+  grades          Grade[]
+  reportCards     ReportCard[]
+  counseling      CounselingRecord[]
+  violations      StudentViolation[]
+  achievements    StudentAchievement[]
+  halaqahMembers  HalaqahMember[]
 
   @@unique([tenantId, nis])
   @@index([tenantId, status])
@@ -441,6 +467,7 @@ model Subject {
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   institution Institution @relation(fields: [institutionId], references: [id], onDelete: Restrict)
+  grades      Grade[]
 
   @@unique([tenantId, code])
   @@map("subjects")
@@ -659,4 +686,293 @@ model TahfizRecord {
 
   @@index([tenantId, studentId, recordedAt])
   @@map("tahfiz_records")
+}
+
+// ------------------------------------------------------------------------------
+// 7. LEAVE & DISPENSATION REQUESTS
+// ------------------------------------------------------------------------------
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveRequest {
+  id                   String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String      @map("tenant_id") @db.Uuid
+  studentId            String      @map("student_id") @db.Uuid
+  reason               String      @db.VarChar(255)
+  startDate            DateTime    @map("start_date") @db.Date
+  endDate              DateTime    @map("end_date") @db.Date
+  status               LeaveStatus @default(PENDING)
+  approvedByEmployeeId String?     @map("approved_by_employee_id") @db.Uuid
+  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student    Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  approvedBy Employee? @relation("ApprovedLeaves", fields: [approvedByEmployeeId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, studentId, status])
+  @@map("leave_requests")
+}
+
+// ------------------------------------------------------------------------------
+// 8. DOUBLE-ENTRY ACCOUNTING & CASH LEDGERS
+// ------------------------------------------------------------------------------
+
+enum JournalLineType {
+  DEBIT
+  CREDIT
+}
+
+model CashAccount {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  accountName    String   @map("account_name") @db.VarChar(150)
+  accountNumber  String?  @map("account_number") @db.VarChar(100)
+  bankName       String?  @map("bank_name") @db.VarChar(100)
+  currentBalance Decimal  @default(0) @map("current_balance") @db.Decimal(15, 2)
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  journalLines JournalLine[]
+
+  @@map("cash_accounts")
+}
+
+model JournalEntry {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  entryDate   DateTime @map("entry_date") @db.Date
+  referenceNo String   @map("reference_no") @db.VarChar(100)
+  description String   @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  lines  JournalLine[]
+
+  @@unique([tenantId, referenceNo])
+  @@index([tenantId, entryDate])
+  @@map("journal_entries")
+}
+
+model JournalLine {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  journalEntryId String          @map("journal_entry_id") @db.Uuid
+  cashAccountId  String          @map("cash_account_id") @db.Uuid
+  lineType       JournalLineType @map("line_type")
+  amount         Decimal         @db.Decimal(15, 2)
+  notes          String?         @db.VarChar(255)
+
+  journalEntry JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  cashAccount  CashAccount  @relation(fields: [cashAccountId], references: [id], onDelete: Restrict)
+
+  @@map("journal_lines")
+}
+
+// ------------------------------------------------------------------------------
+// 9. ACADEMIC GRADES & REPORT CARDS (RAPOR)
+// ------------------------------------------------------------------------------
+
+enum GradeComponent {
+  DAILY_TASK
+  QUIZ
+  MID_EXAM
+  FINAL_EXAM
+  PRACTICAL
+  CHARACTER_ATTITUDE
+}
+
+model Grade {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  studentId      String         @map("student_id") @db.Uuid
+  subjectId      String         @map("subject_id") @db.Uuid
+  academicYearId String         @map("academic_year_id") @db.Uuid
+  component      GradeComponent
+  score          Decimal        @db.Decimal(5, 2)
+  weight         Decimal        @default(1.0) @db.Decimal(5, 2)
+  notes          String?        @db.VarChar(255)
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject      Subject      @relation(fields: [subjectId], references: [id], onDelete: Restrict)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, studentId, subjectId])
+  @@map("grades")
+}
+
+model ReportCard {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  studentId      String   @map("student_id") @db.Uuid
+  classGroupId   String   @map("class_group_id") @db.Uuid
+  academicYearId String   @map("academic_year_id") @db.Uuid
+  semester       String   @db.VarChar(20)
+  finalAverage   Decimal  @map("final_average") @db.Decimal(5, 2)
+  ranking        Int?
+  remarks        String?  @db.Text
+  pdfUrl         String?  @map("pdf_url") @db.VarChar(500)
+  issuedAt       DateTime @default(now()) @map("issued_at") @db.Timestamptz(6)
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  classGroup   ClassGroup   @relation(fields: [classGroupId], references: [id], onDelete: Restrict)
+  academicYear AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Restrict)
+
+  @@unique([tenantId, studentId, academicYearId, semester])
+  @@map("report_cards")
+}
+
+// ------------------------------------------------------------------------------
+// 10. HALAQAH, COUNSELING, VIOLATIONS & ACHIEVEMENTS
+// ------------------------------------------------------------------------------
+
+model HalaqahGroup {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  name            String   @db.VarChar(100)
+  ustazEmployeeId String   @map("ustaz_employee_id") @db.Uuid
+  targetJuz       Int      @default(30) @map("target_juz")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  ustaz   Employee        @relation("SupervisedHalaqah", fields: [ustazEmployeeId], references: [id], onDelete: Restrict)
+  members HalaqahMember[]
+
+  @@map("halaqah_groups")
+}
+
+model HalaqahMember {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  halaqahGroupId String   @map("halaqah_group_id") @db.Uuid
+  studentId      String   @map("student_id") @db.Uuid
+  joinedAt       DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  halaqahGroup HalaqahGroup @relation(fields: [halaqahGroupId], references: [id], onDelete: Cascade)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([halaqahGroupId, studentId])
+  @@map("halaqah_members")
+}
+
+model CounselingRecord {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String   @map("tenant_id") @db.Uuid
+  studentId           String   @map("student_id") @db.Uuid
+  counselorEmployeeId String   @map("counselor_employee_id") @db.Uuid
+  sessionDate         DateTime @map("session_date") @db.Date
+  category            String   @db.VarChar(100) // Academic, Behavioral, Family, Personal
+  notes               String   @db.Text // Encrypted / Restricted Access
+  actionPlan          String?  @map("action_plan") @db.Text
+  followUpRequired    Boolean  @default(false) @map("follow_up_required")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  counselor Employee @relation("CounselorSessions", fields: [counselorEmployeeId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, studentId, sessionDate])
+  @@map("counseling_records")
+}
+
+model StudentViolation {
+  id                   String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId             String   @map("tenant_id") @db.Uuid
+  studentId            String   @map("student_id") @db.Uuid
+  recordedByEmployeeId String   @map("recorded_by_employee_id") @db.Uuid
+  violationDate        DateTime @map("violation_date") @db.Date
+  title                String   @db.VarChar(200)
+  points               Int      @default(0)
+  sanction             String?  @db.VarChar(255)
+  status               String   @default("RECORDED") @db.VarChar(50)
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  recordedBy Employee @relation("RecordedViolations", fields: [recordedByEmployeeId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, studentId, violationDate])
+  @@map("student_violations")
+}
+
+model StudentAchievement {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  studentId       String   @map("student_id") @db.Uuid
+  title           String   @db.VarChar(200)
+  level           String   @db.VarChar(100) // District, Province, National, International
+  achievementDate DateTime @map("achievement_date") @db.Date
+  points          Int      @default(0)
+  certificateUrl  String?  @map("certificate_url") @db.VarChar(500)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, studentId])
+  @@map("student_achievements")
+}
+
+// ------------------------------------------------------------------------------
+// 11. ANNOUNCEMENTS & COMPLAINT TICKETING
+// ------------------------------------------------------------------------------
+
+model Announcement {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  title          String    @db.VarChar(255)
+  content        String    @db.Text
+  targetAudience String    @default("ALL") @map("target_audience") @db.VarChar(50) // ALL, TEACHERS, STUDENTS, GUARDIANS
+  isPublished    Boolean   @default(true) @map("is_published")
+  publishedAt    DateTime  @default(now()) @map("published_at") @db.Timestamptz(6)
+  expiresAt      DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, isPublished, publishedAt])
+  @@map("announcements")
+}
+
+enum ComplaintPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model ComplaintTicket {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String            @map("tenant_id") @db.Uuid
+  userId          String            @map("user_id") @db.Uuid
+  title           String            @db.VarChar(255)
+  description     String            @db.Text
+  category        String            @db.VarChar(100)
+  priority        ComplaintPriority @default(MEDIUM)
+  status          ComplaintStatus   @default(OPEN)
+  resolutionNotes String?           @map("resolution_notes") @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  resolvedAt      DateTime?         @map("resolved_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, status, priority])
+  @@map("complaint_tickets")
 }
