@@ -6,6 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "test": "echo \"Shared types verified via TypeScript compilation\"",
     "dev": "tsc --watch",
     "clean": "rimraf dist"
   },

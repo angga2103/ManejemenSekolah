@@ -1,0 +1,54 @@
+name: Mobile CI Pipeline
+
+on:
+  push:
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+    branches: [ main, develop ]
+  pull_request:
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/mobile-ci.yml'
+    branches: [ main, develop ]
+
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-analyze-and-test:
+    name: Flutter Analyze & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Flutter Format Check
+        working-directory: apps/mobile
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Flutter Static Analysis
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Run Unit Tests
+        working-directory: apps/mobile
+        run: flutter test

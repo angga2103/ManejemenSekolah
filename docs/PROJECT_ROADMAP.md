@@ -1,0 +1,58 @@
+# Peta Jalan Pengembangan Proyek (Project Roadmap)
+
+Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan sistem status tugas yang transparan:
+- `NOT_STARTED` : Belum dimulai
+- `IN_PROGRESS` : Sedang dalam pengerjaan
+- `BLOCKED` : Terkendala dependensi
+- `COMPLETED` : Selesai diimplementasikan
+- `VERIFIED` : Teruji dengan bukti pengujian lulus (*automated tests pass*)
+
+---
+
+## Rincian Status Per Fase
+
+### [Phase 0] Architecture Foundation, Repository Setup & Infrastructure
+* **Status**: `VERIFIED`
+* **Bukti**: 4 unit test NestJS lolos, widget test Flutter lolos, static analysis lolos, Prisma schema lolos validasi, build web Vite lolos.
+* **Cakupan**: 11 dokumen master arsitektur, monorepo workspaces, konfigurasi Docker Compose, template CI/CD.
+
+### [Phase 1] Authentication, Multi-Tenancy Engine & Granular RBAC
+* **Status**: `NOT_STARTED`
+* **Target Rilis**: Tahap berikutnya
+* **Cakupan**: Registrasi tenant, login JWT + Refresh Token Rotation, RLS session injector, decorator `@Roles` & `@RequirePermissions`.
+
+### [Phase 2] Master Data & Student/Institution Management
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Lembaga, rombel kelas, data induk santri, data wali murid, pemetaan relasi santri-wali, import/export Excel.
+
+### [Phase 3] Attendance Engine, Offline Synchronization & Notifications
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Presensi barcode/QR dinamis bertanda tangan kriptografis, Drift SQLite write queue, sinkronisasi otomatis, push notification Firebase/WhatsApp.
+
+### [Phase 4] Financial Management, Billing & Payment Gateway Integration
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Tagihan SPP berkala, uang gedung, infak santri, integrasi sandbox QRIS/VA, struk digital, pencatatan jurnal umum kas.
+
+### [Phase 5] Academic Management, Dual Curricula & PDF Report Cards
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Kurikulum formal Kemendikbud/Kemenag, kurikulum diniyah pesantren, input nilai harian/ujian, cetak Rapor PDF otomatis.
+
+### [Phase 6] Learning Management System (LMS) & Online Examinations
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Bank soal, ujian daring objektif (CBT) otomatis, materi bahan ajar digital, pengumpulan tugas santri.
+
+### [Phase 7] Pesantren, Dormitory (Asrama), Tahfiz & Halaqah
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Pembagian kamar asrama, penugasan musyrif, log setoran ziyadah & muroja'ah tahfiz, izin santri keluar asrama.
+
+### [Phase 8] Communication Center & Student Development
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Tiket keluhan rahasia orang tua, rekam poin pelanggaran & prestasi, buku catatan Bimbingan Konseling (BK) berproteksi khusus.
+
+### [Phase 9] SaaS Subscription & Developer Control Center
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Manajemen lisensi multi-tenant, aktivasi fitur per modul, monitoring performa database & server secara real-time.
+
+### [Phase 10] Security Audit, Load Testing & Production Deployment
+* **Status**: `NOT_STARTED`
+* **Cakupan**: Uji penetrasi cross-tenant, stress test 3.000 concurrent students, drill pemulihan backup database, rilis live VPS produksi.

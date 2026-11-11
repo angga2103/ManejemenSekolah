@@ -2,8 +2,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:edusaas_mobile/main.dart';
 
 void main() {
-  testWidgets('Renders Phase 0 placeholder successfully', (WidgetTester tester) async {
+  testWidgets('Renders EduSaaS Mobile Role Preview Screen', (WidgetTester tester) async {
     await tester.pumpWidget(const EduSaaSApp());
-    expect(find.text('EduSaaS Mobile: Phase 0 Foundation'), findsOneWidget);
+
+    // Verify app title and role preview title render
+    expect(find.text('EduSaaS Mobile'), findsOneWidget);
+    expect(find.text('Pratinjau Peran: Attendance Officer'), findsOneWidget);
+    expect(find.text('Pindai QR Santri'), findsOneWidget);
   });
 }

@@ -1,19 +1,25 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Navbar } from './components/layout/Navbar';
+import { Sidebar } from './components/layout/Sidebar';
+import { DashboardPrototypes } from './pages/dashboards/DashboardPrototypes';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export const App: React.FC = () => {
+  const [currentRole, setCurrentRole] = useState<string>('principal');
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-slate-50">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 border border-slate-200 text-center">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
-          EduSaaS Management
-        </h1>
-        <p className="text-sm text-slate-600 mb-6">
-          Sistem Manajemen Terpadu Sekolah & Pondok Pesantren Multi-Tenant
-        </p>
-        <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-          Phase 0: Architecture & Foundation Ready
+    <ErrorBoundary>
+      <div className="min-h-screen bg-slate-50 flex flex-col text-slate-900 font-sans">
+        <Navbar currentRole={currentRole} onRoleChange={setCurrentRole} />
+
+        <div className="flex flex-1">
+          <Sidebar currentRole={currentRole} />
+
+          <main className="flex-1 p-8 overflow-y-auto">
+            <DashboardPrototypes role={currentRole} />
+          </main>
         </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 };
