@@ -232,3 +232,21 @@ export enum SyncOperationType {
   TAHFIZ_LOG = 'TAHFIZ_LOG',
   DISCIPLINE_NOTE = 'DISCIPLINE_NOTE'
 }
+
+// -----------------------------------------------------------------------------
+// 8. NOTIFICATION ENUMS
+// -----------------------------------------------------------------------------
+export enum NotificationChannel {
+  IN_APP = 'IN_APP',
+  PUSH = 'PUSH',
+  WHATSAPP = 'WHATSAPP',
+  SMS = 'SMS',
+  EMAIL = 'EMAIL'
+}
+
+export enum NotificationStatus {
+  PENDING = 'PENDING',
+  SENT = 'SENT',
+  FAILED = 'FAILED',
+  READ = 'READ'
+}

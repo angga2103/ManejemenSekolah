@@ -27,7 +27,8 @@ Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan 
 * **Cakupan**: Lembaga, rombel kelas, data induk santri, data wali murid, pemetaan relasi santri-wali, import/export Excel.
 
 ### [Phase 3] Attendance Engine, Offline Synchronization & Notifications
-* **Status**: `NOT_STARTED`
+* **Status**: `VERIFIED`
+* **Bukti**: 14 unit test suites NestJS lolos (46/46 tests), engine QR dinamis HMAC-SHA256 dengan time-window validation, offline sync batch protocol dengan pelaporan status terperinci, integrasi permohonan izin dengan auto-sync status presensi, notifikasi otomatis wali murid (In-App, Push FCM, WhatsApp), antarmuka web proyektor kelas & antrean izin, antarmuka mobile scanner & offline queue (0 issues di Flutter analyze, widget test lulus).
 * **Cakupan**: Presensi barcode/QR dinamis bertanda tangan kriptografis, Drift SQLite write queue, sinkronisasi otomatis, push notification Firebase/WhatsApp.
 
 ### [Phase 4] Financial Management, Billing & Payment Gateway Integration

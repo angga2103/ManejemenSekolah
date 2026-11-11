@@ -6,12 +6,13 @@ import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { DashboardPrototypes } from './pages/dashboards/DashboardPrototypes';
 import { StudentsPage } from './pages/students/StudentsPage';
+import { AttendancePage } from './pages/attendance/AttendancePage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainAppContent: React.FC = () => {
   const { isAuthenticated, isLoading, user } = useAuth();
   const [currentRole, setCurrentRole] = useState<string>('principal');
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('attendance');
   const [authView, setAuthView] = useState<'login' | 'register-tenant'>('login');
 
   // Sync role with user activeRole if authenticated
@@ -64,6 +65,8 @@ const MainAppContent: React.FC = () => {
         <main className="flex-1 p-8 overflow-y-auto">
           {activeTab === 'students' ? (
             <StudentsPage />
+          ) : activeTab === 'attendance' ? (
+            <AttendancePage />
           ) : (
             <DashboardPrototypes role={currentRole} />
           )}

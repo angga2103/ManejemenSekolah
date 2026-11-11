@@ -73,6 +73,7 @@ model Tenant {
   complaintTickets  ComplaintTicket[]
   halaqahGroups     HalaqahGroup[]
   auditLogs         AuditLog[]
+  notificationLogs  NotificationLog[]
 
   @@map("tenants")
 }
@@ -141,6 +142,7 @@ model User {
   employee         Employee?
   complaintTickets ComplaintTicket[]
   auditLogs        AuditLog[]
+  notifications    NotificationLog[]
 
   @@unique([tenantId, email])
   @@unique([tenantId, phone])
@@ -975,4 +977,44 @@ model ComplaintTicket {
 
   @@index([tenantId, status, priority])
   @@map("complaint_tickets")
+}
+
+// ------------------------------------------------------------------------------
+// 12. NOTIFICATION CHANNELS & AUDIT LOGS
+// ------------------------------------------------------------------------------
+
+enum NotificationChannel {
+  IN_APP
+  PUSH
+  WHATSAPP
+  SMS
+  EMAIL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+model NotificationLog {
+  id        String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String              @map("tenant_id") @db.Uuid
+  userId    String?             @map("user_id") @db.Uuid
+  title     String              @db.VarChar(200)
+  body      String              @db.Text
+  channel   NotificationChannel @default(IN_APP)
+  status    NotificationStatus  @default(SENT)
+  category  String?             @db.VarChar(50)
+  metadata  Json?               @db.JsonB
+  readAt    DateTime?           @map("read_at") @db.Timestamptz(6)
+  createdAt DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, userId, status])
+  @@index([tenantId, createdAt])
+  @@map("notification_logs")
 }
