@@ -1,0 +1,127 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ----------------------------------------------------------------------------
+  # 1. API (NestJS + Prisma) Lint, Typecheck, and Tests
+  # ----------------------------------------------------------------------------
+  api-checks:
+    name: API (NestJS) Quality & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Validate Prisma Schema
+        run: npm run prisma:validate --workspace=apps/api --if-present
+
+      - name: Lint API
+        run: npm run lint --workspace=apps/api --if-present
+
+      - name: Typecheck API
+        run: npm run typecheck --workspace=apps/api --if-present
+
+      - name: Run API Unit Tests
+        run: npm run test --workspace=apps/api --if-present
+
+  # ----------------------------------------------------------------------------
+  # 2. Web (React + Tailwind) Lint, Typecheck, and Build
+  # ----------------------------------------------------------------------------
+  web-checks:
+    name: Web Portal Quality & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint Web
+        run: npm run lint --workspace=apps/web --if-present
+
+      - name: Typecheck Web
+        run: npm run typecheck --workspace=apps/web --if-present
+
+      - name: Build Web
+        run: npm run build --workspace=apps/web --if-present
+
+  # ----------------------------------------------------------------------------
+  # 3. Mobile (Flutter) Analyze and Tests
+  # ----------------------------------------------------------------------------
+  mobile-checks:
+    name: Mobile (Flutter) Quality & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Run Static Analysis
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Run Unit & Widget Tests
+        working-directory: apps/mobile
+        run: flutter test --coverage
+
+  # ----------------------------------------------------------------------------
+  # 4. Shared Packages Validation
+  # ----------------------------------------------------------------------------
+  packages-checks:
+    name: Shared Packages Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Shared Types
+        run: npm run build --workspace=packages/shared-types --if-present
+
+      - name: Build API Contracts
+        run: npm run build --workspace=packages/api-contracts --if-present
