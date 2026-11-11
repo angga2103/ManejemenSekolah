@@ -353,3 +353,26 @@ export enum AchievementLevel {
   NASIONAL = 'NASIONAL',
   INTERNASIONAL = 'INTERNASIONAL'
 }
+// -----------------------------------------------------------------------------
+// 12. SAAS SUBSCRIPTIONS & DEVELOPER CONTROL CENTER ENUMS
+// -----------------------------------------------------------------------------
+export enum SaaSModuleKey {
+  MASTER_DATA = 'MASTER_DATA',
+  USERS_RBAC = 'USERS_RBAC',
+  ATTENDANCE = 'ATTENDANCE',
+  FINANCE = 'FINANCE',
+  ACADEMICS = 'ACADEMICS',
+  LMS_CBT = 'LMS_CBT',
+  PESANTREN = 'PESANTREN',
+  TAHFIZ = 'TAHFIZ',
+  DORMITORY = 'DORMITORY',
+  DISCIPLINE = 'DISCIPLINE',
+  COUNSELING = 'COUNSELING',
+  COMMUNICATION = 'COMMUNICATION'
+}
+
+export enum SystemHealthStatus {
+  HEALTHY = 'HEALTHY',
+  DEGRADED = 'DEGRADED',
+  CRITICAL = 'CRITICAL'
+}

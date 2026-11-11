@@ -12,6 +12,7 @@ import { AcademicsPage } from './pages/academics/AcademicsPage';
 import { LmsPage } from './pages/lms/LmsPage';
 import { PesantrenPage } from './pages/pesantren/PesantrenPage';
 import { CommunicationPage } from './pages/communication/CommunicationPage';
+import { ControlCenterPage } from './pages/control-center/ControlCenterPage';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainAppContent: React.FC = () => {
@@ -82,6 +83,8 @@ const MainAppContent: React.FC = () => {
             <PesantrenPage />
           ) : activeTab === 'communication' || activeTab === 'discipline' || activeTab === 'counseling' || activeTab === 'complaints' ? (
             <CommunicationPage />
+          ) : activeTab === 'control-center' || activeTab === 'tenants' || activeTab === 'subscriptions' || activeTab === 'health' || activeTab === 'audit' ? (
+            <ControlCenterPage />
           ) : (
             <DashboardPrototypes role={currentRole} />
           )}

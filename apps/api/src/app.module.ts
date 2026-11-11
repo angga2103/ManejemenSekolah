@@ -15,6 +15,7 @@ import { LmsModule } from './modules/lms/lms.module';
 import { CbtModule } from './modules/cbt/cbt.module';
 import { PesantrenModule } from './modules/pesantren/pesantren.module';
 import { CommunicationModule } from './modules/communication/communication.module';
+import { ControlCenterModule } from './modules/control-center/control-center.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { TenantMiddleware } from './common/tenant/tenant.middleware';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -42,6 +43,7 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     CbtModule,
     PesantrenModule,
     CommunicationModule,
+    ControlCenterModule,
   ],
   providers: [
     {

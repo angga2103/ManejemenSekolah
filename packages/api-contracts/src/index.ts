@@ -10,3 +10,4 @@ export * from './lms.dto.js';
 export * from './cbt.dto.js';
 export * from './pesantren.dto.js';
 export * from './communication.dto.js';
+export * from './subscription.dto.js';
