@@ -47,8 +47,9 @@ Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan 
 * **Cakupan**: Bank soal, ujian daring objektif (CBT) otomatis, materi bahan ajar digital, pengumpulan tugas santri, integrasi nilai CBT ke buku rapor digital.
 
 ### [Phase 7] Pesantren, Dormitory (Asrama), Tahfiz & Halaqah
-* **Status**: `NOT_STARTED`
-* **Cakupan**: Pembagian kamar asrama, penugasan musyrif, log setoran ziyadah & muroja'ah tahfiz, izin santri keluar asrama.
+* **Status**: `VERIFIED`
+* **Bukti**: 24 unit test suites NestJS lolos (96/96 tests), manajemen gedung asrama dengan pemisahan gender (Bannin/Bannat), kamar asrama dengan validasi batas kapasitas kasur & pencegahan overcapacity, alokasi & checkout kasur santri, pembentukan kelompok halaqah santri & ustadz pembina, jurnal setoran hafalan Ziyadah & Muroja'ah dengan predikat Mumtaz/Jayyid/Maqbul & kalkulasi capaian juz Al-Qur'an (30 Juz), alur perizinan santri keluar/pulang berjenjang (Musyrif → Keasramaan → Satpam) berbekal token keamanan digital gerbang (Gate Pass) dengan auto-notifikasi wali murid; Portal Web Pesantren lengkap di React; Dart models, service & mobile tahfiz journal screen di Flutter (0 issues di Flutter analyze, widget test lulus, Monorepo build clean).
+* **Cakupan**: Pembagian kamar asrama, penugasan musyrif, log setoran ziyadah & muroja'ah tahfiz, izin santri keluar asrama & verifikasi token gerbang keamanan.
 
 ### [Phase 8] Communication Center & Student Development
 * **Status**: `NOT_STARTED`

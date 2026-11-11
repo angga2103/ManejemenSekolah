@@ -81,6 +81,8 @@ model Tenant {
   examQuestions         ExamQuestion[]
   exams                 Exam[]
   studentExamSessions   StudentExamSession[]
+  dormAllocations       DormAllocation[]
+  pesantrenPermits      PesantrenPermit[]
 
   @@map("tenants")
 }
@@ -365,19 +367,21 @@ model Employee {
   createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  tenant              Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  user                User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  homeroomClasses     ClassGroup[]
-  musyrifAssignments  MusyrifAssignment[]
-  tahfizMentored      TahfizRecord[]
-  approvedLeaves      LeaveRequest[]         @relation("ApprovedLeaves")
-  counselingSessions  CounselingRecord[]     @relation("CounselorSessions")
-  violationsRecorded  StudentViolation[]     @relation("RecordedViolations")
-  halaqahSupervised   HalaqahGroup[]         @relation("SupervisedHalaqah")
-  authoredMaterials   CourseMaterial[]
-  assignedAssignments Assignment[]
-  gradedSubmissions   AssignmentSubmission[]
-  questionBanks       QuestionBank[]
+  tenant                    Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  user                      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  homeroomClasses           ClassGroup[]
+  musyrifAssignments        MusyrifAssignment[]
+  tahfizMentored            TahfizRecord[]
+  approvedLeaves            LeaveRequest[]         @relation("ApprovedLeaves")
+  counselingSessions        CounselingRecord[]     @relation("CounselorSessions")
+  violationsRecorded        StudentViolation[]     @relation("RecordedViolations")
+  halaqahSupervised         HalaqahGroup[]         @relation("SupervisedHalaqah")
+  authoredMaterials         CourseMaterial[]
+  assignedAssignments       Assignment[]
+  gradedSubmissions         AssignmentSubmission[]
+  questionBanks             QuestionBank[]
+  musyrifApprovedPermits    PesantrenPermit[]      @relation("MusyrifApprovedPermits")
+  keasramaanApprovedPermits PesantrenPermit[]      @relation("KeasramaanApprovedPermits")
 
   @@unique([tenantId, nip])
   @@map("employees")
@@ -417,6 +421,7 @@ model Student {
   halaqahMembers        HalaqahMember[]
   assignmentSubmissions AssignmentSubmission[]
   examSessions          StudentExamSession[]
+  pesantrenPermits      PesantrenPermit[]
 
   @@unique([tenantId, nis])
   @@index([tenantId, status])
@@ -644,14 +649,17 @@ model Payment {
 // ------------------------------------------------------------------------------
 
 model Dormitory {
-  id       String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId String     @map("tenant_id") @db.Uuid
-  name     String     @db.VarChar(150)
-  gender   Gender
-  rooms    DormRoom[]
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String     @map("tenant_id") @db.Uuid
+  name         String     @db.VarChar(150)
+  buildingCode String?    @map("building_code") @db.VarChar(50)
+  gender       Gender
+  description  String?    @db.VarChar(255)
+  rooms        DormRoom[]
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
 
+  @@index([tenantId])
   @@map("dormitories")
 }
 
@@ -659,24 +667,32 @@ model DormRoom {
   id          String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   dormitoryId String           @map("dormitory_id") @db.Uuid
   roomNumber  String           @map("room_number") @db.VarChar(50)
+  floor       Int              @default(1)
   capacity    Int              @default(10)
+  description String?          @db.VarChar(255)
   allocations DormAllocation[]
   dormitory   Dormitory        @relation(fields: [dormitoryId], references: [id], onDelete: Cascade)
 
+  @@index([dormitoryId])
   @@map("dorm_rooms")
 }
 
 model DormAllocation {
   id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
   roomId    String    @map("room_id") @db.Uuid
   studentId String    @map("student_id") @db.Uuid
+  bedNumber String?   @map("bed_number") @db.VarChar(50)
   startDate DateTime  @map("start_date") @db.Date
   endDate   DateTime? @map("end_date") @db.Date
   isActive  Boolean   @default(true) @map("is_active")
+  notes     String?   @db.VarChar(255)
 
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   room    DormRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
+  @@index([tenantId, studentId, isActive])
   @@map("dorm_allocations")
 }
 
@@ -690,25 +706,78 @@ model MusyrifAssignment {
 }
 
 model TahfizRecord {
-  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId      String   @map("tenant_id") @db.Uuid
-  studentId     String   @map("student_id") @db.Uuid
-  musyrifId     String   @map("musyrif_id") @db.Uuid
-  recordType    String   @default("ZIYADAH") @map("record_type") @db.VarChar(50)
-  surahNumber   Int      @map("surah_number")
-  surahName     String   @map("surah_name") @db.VarChar(100)
-  ayatStart     Int      @map("ayat_start")
-  ayatEnd       Int      @map("ayat_end")
-  juz           Int
-  fluencyRating String   @default("JAYYID") @map("fluency_rating") @db.VarChar(50)
-  recordedAt    DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  studentId      String   @map("student_id") @db.Uuid
+  musyrifId      String   @map("musyrif_id") @db.Uuid
+  halaqahGroupId String?  @map("halaqah_group_id") @db.Uuid
+  recordType     String   @default("ZIYADAH") @map("record_type") @db.VarChar(50)
+  surahNumber    Int      @map("surah_number")
+  surahName      String   @map("surah_name") @db.VarChar(100)
+  ayatStart      Int      @map("ayat_start")
+  ayatEnd        Int      @map("ayat_end")
+  juz            Int
+  fluencyRating  String   @default("JAYYID") @map("fluency_rating") @db.VarChar(50)
+  tajwidRating   String?  @default("JAYYID") @map("tajwid_rating") @db.VarChar(50)
+  notes          String?  @db.VarChar(255)
+  recordedAt     DateTime @default(now()) @map("recorded_at") @db.Timestamptz(6)
 
-  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  student Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  musyrif Employee @relation(fields: [musyrifId], references: [id], onDelete: Restrict)
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student      Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  musyrif      Employee      @relation(fields: [musyrifId], references: [id], onDelete: Restrict)
+  halaqahGroup HalaqahGroup? @relation(fields: [halaqahGroupId], references: [id], onDelete: SetNull)
 
   @@index([tenantId, studentId, recordedAt])
+  @@index([tenantId, halaqahGroupId])
   @@map("tahfiz_records")
+}
+
+enum PesantrenPermitType {
+  PULANG_KE_RUMAH
+  KELUAR_KOMPLEKS
+  RUMAH_SAKIT
+  LAINNYA
+}
+
+enum PesantrenPermitStatus {
+  PENDING_APPROVAL
+  APPROVED_BY_MUSYRIF
+  APPROVED_BY_KEASRAMAAN
+  REJECTED
+  ACTIVE_OUTSIDE
+  RETURNED
+  OVERDUE
+}
+
+model PesantrenPermit {
+  id                     String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId               String                @map("tenant_id") @db.Uuid
+  studentId              String                @map("student_id") @db.Uuid
+  permitType             PesantrenPermitType   @map("permit_type")
+  reason                 String                @db.VarChar(255)
+  pickupPersonName       String                @map("pickup_person_name") @db.VarChar(150)
+  pickupPersonRelation   String                @map("pickup_person_relation") @db.VarChar(100)
+  pickupPersonPhone      String                @map("pickup_person_phone") @db.VarChar(50)
+  expectedDeparture      DateTime              @map("expected_departure") @db.Timestamptz(6)
+  expectedReturn         DateTime              @map("expected_return") @db.Timestamptz(6)
+  actualDeparture        DateTime?             @map("actual_departure") @db.Timestamptz(6)
+  actualReturn           DateTime?             @map("actual_return") @db.Timestamptz(6)
+  securityGateToken      String                @unique @map("security_gate_token") @db.VarChar(64)
+  status                 PesantrenPermitStatus @default(PENDING_APPROVAL)
+  approvedByMusyrifId    String?               @map("approved_by_musyrif_id") @db.Uuid
+  approvedByKeasramaanId String?               @map("approved_by_keasramaan_id") @db.Uuid
+  notes                  String?               @db.VarChar(255)
+  createdAt              DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  student              Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  approvedByMusyrif    Employee? @relation("MusyrifApprovedPermits", fields: [approvedByMusyrifId], references: [id], onDelete: SetNull)
+  approvedByKeasramaan Employee? @relation("KeasramaanApprovedPermits", fields: [approvedByKeasramaanId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, studentId, status])
+  @@index([tenantId, status])
+  @@map("pesantren_permits")
 }
 
 // ------------------------------------------------------------------------------
@@ -865,11 +934,13 @@ model HalaqahGroup {
   name            String   @db.VarChar(100)
   ustazEmployeeId String   @map("ustaz_employee_id") @db.Uuid
   targetJuz       Int      @default(30) @map("target_juz")
+  schedule        String?  @db.VarChar(100)
   createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  ustaz   Employee        @relation("SupervisedHalaqah", fields: [ustazEmployeeId], references: [id], onDelete: Restrict)
-  members HalaqahMember[]
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  ustaz         Employee        @relation("SupervisedHalaqah", fields: [ustazEmployeeId], references: [id], onDelete: Restrict)
+  members       HalaqahMember[]
+  tahfizRecords TahfizRecord[]
 
   @@map("halaqah_groups")
 }

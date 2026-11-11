@@ -8,3 +8,4 @@ export * from './finance.dto.js';
 export * from './academics.dto.js';
 export * from './lms.dto.js';
 export * from './cbt.dto.js';
+export * from './pesantren.dto.js';

@@ -286,3 +286,23 @@ export enum ExamSessionStatus {
   TIMED_OUT = 'TIMED_OUT',
   GRADED = 'GRADED'
 }
+
+// -----------------------------------------------------------------------------
+// 10. PESANTREN & DORMITORY ENUMS
+// -----------------------------------------------------------------------------
+export enum PesantrenPermitType {
+  PULANG_KE_RUMAH = 'PULANG_KE_RUMAH',
+  KELUAR_KOMPLEKS = 'KELUAR_KOMPLEKS',
+  RUMAH_SAKIT = 'RUMAH_SAKIT',
+  LAINNYA = 'LAINNYA'
+}
+
+export enum PesantrenPermitStatus {
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED_BY_MUSYRIF = 'APPROVED_BY_MUSYRIF',
+  APPROVED_BY_KEASRAMAAN = 'APPROVED_BY_KEASRAMAAN',
+  REJECTED = 'REJECTED',
+  ACTIVE_OUTSIDE = 'ACTIVE_OUTSIDE',
+  RETURNED = 'RETURNED',
+  OVERDUE = 'OVERDUE'
+}
