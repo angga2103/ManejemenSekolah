@@ -17,9 +17,9 @@ Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan 
 * **Cakupan**: 11 dokumen master arsitektur, monorepo workspaces, konfigurasi Docker Compose, template CI/CD.
 
 ### [Phase 1] Authentication, Multi-Tenancy Engine & Granular RBAC
-* **Status**: `NOT_STARTED`
-* **Target Rilis**: Tahap berikutnya
-* **Cakupan**: Registrasi tenant, login JWT + Refresh Token Rotation, RLS session injector, decorator `@Roles` & `@RequirePermissions`.
+* **Status**: `VERIFIED`
+* **Bukti**: 8 unit test suites NestJS lolos (25/25 tests), registrasi & resolusi tenant publik, login real bcrypt hash, refresh token rotation di DB, decorator @Roles & @RequirePermissions, permission catalog 171 aksi, React auth context & login/register pages, Flutter auth API service.
+* **Cakupan**: Registrasi tenant, login JWT + Refresh Token Rotation, RLS session injector, decorator `@Roles` & `@RequirePermissions`, seed script 12 sistem roles & demo accounts.
 
 ### [Phase 2] Master Data & Student/Institution Management
 * **Status**: `NOT_STARTED`
