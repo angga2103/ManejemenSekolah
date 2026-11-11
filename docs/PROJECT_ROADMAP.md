@@ -42,8 +42,9 @@ Platform dikembangkan secara bertahap (*incremental milestone strategy*) dengan 
 * **Cakupan**: Kurikulum formal Kemendikbud/Kemenag, kurikulum diniyah pesantren, input nilai harian/ujian, kalkulasi bobot & ranking kelas, cetak Rapor PDF/HTML resmi otomatis.
 
 ### [Phase 6] Learning Management System (LMS) & Online Examinations
-* **Status**: `NOT_STARTED`
-* **Cakupan**: Bank soal, ujian daring objektif (CBT) otomatis, materi bahan ajar digital, pengumpulan tugas santri.
+* **Status**: `VERIFIED`
+* **Bukti**: 21 unit test suites NestJS lolos (79/79 tests), distribusi materi ajar multi-tipe (PDF, DOCS, VIDEO, ARTICLE) dengan klasifikasi kurikulum Formal/Pesantren, siklus tugas santri (instruksi, tenggat, penilaian & umpan balik guru), bank soal multi-tipe (Pilihan Ganda, Benar/Salah, Esai), manajemen paket ujian CBT dengan validasi token & passing grade (KKM), pengacakan butir soal & opsi jawaban, engine sesi ujian santri dengan countdown server-side & auto-save jawaban real-time, auto-sinkronisasi nilai akhir ujian CBT ke entitas nilai Grade rapor digital Fase 5; Portal Web LMS & CBT proktor lengkap di React; Dart models, CBT API service & antarmuka ujian interaktif di Flutter (0 issues di Flutter analyze, widget test lulus, Monorepo build clean).
+* **Cakupan**: Bank soal, ujian daring objektif (CBT) otomatis, materi bahan ajar digital, pengumpulan tugas santri, integrasi nilai CBT ke buku rapor digital.
 
 ### [Phase 7] Pesantren, Dormitory (Asrama), Tahfiz & Halaqah
 * **Status**: `NOT_STARTED`

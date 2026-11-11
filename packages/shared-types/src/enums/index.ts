@@ -255,3 +255,34 @@ export enum NotificationStatus {
   FAILED = 'FAILED',
   READ = 'READ'
 }
+
+// -----------------------------------------------------------------------------
+// 9. LMS & EXAMINATIONS (CBT) ENUMS
+// -----------------------------------------------------------------------------
+export enum MaterialType {
+  DOCUMENT = 'DOCUMENT',
+  VIDEO = 'VIDEO',
+  ARTICLE = 'ARTICLE',
+  LINK = 'LINK'
+}
+
+export enum AssignmentStatus {
+  PENDING = 'PENDING',
+  SUBMITTED = 'SUBMITTED',
+  LATE = 'LATE',
+  GRADED = 'GRADED',
+  RESUBMISSION_REQUESTED = 'RESUBMISSION_REQUESTED'
+}
+
+export enum QuestionType {
+  MULTIPLE_CHOICE = 'MULTIPLE_CHOICE',
+  ESSAY = 'ESSAY',
+  TRUE_FALSE = 'TRUE_FALSE'
+}
+
+export enum ExamSessionStatus {
+  IN_PROGRESS = 'IN_PROGRESS',
+  SUBMITTED = 'SUBMITTED',
+  TIMED_OUT = 'TIMED_OUT',
+  GRADED = 'GRADED'
+}

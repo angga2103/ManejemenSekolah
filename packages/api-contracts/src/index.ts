@@ -6,3 +6,5 @@ export * from './master-data.dto.js';
 export * from './attendance.dto.js';
 export * from './finance.dto.js';
 export * from './academics.dto.js';
+export * from './lms.dto.js';
+export * from './cbt.dto.js';

@@ -11,6 +11,8 @@ import { AttendanceModule } from './modules/attendance/attendance.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { AcademicsModule } from './modules/academics/academics.module';
+import { LmsModule } from './modules/lms/lms.module';
+import { CbtModule } from './modules/cbt/cbt.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { TenantMiddleware } from './common/tenant/tenant.middleware';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
@@ -34,6 +36,8 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
     NotificationsModule,
     FinanceModule,
     AcademicsModule,
+    LmsModule,
+    CbtModule,
   ],
   providers: [
     {
