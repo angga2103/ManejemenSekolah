@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -276,6 +277,55 @@ describe('PaymentsService', () => {
           data: expect.objectContaining({ paymentStatus: PaymentStatus.SUCCESS }),
         }),
       );
+    });
+
+    it('should reject webhook with malformed or invalid length signature key', async () => {
+      // 1. Empty signature
+      await expect(
+        service.processGatewayWebhook(mockTenantId, {
+          transactionCode: 'TRX/TEST',
+          gatewayReference: 'REF-1',
+          amountPaid: 100000,
+          paymentStatus: PaymentStatus.SUCCESS,
+          signatureKey: '',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      // 2. Non-hex characters
+      await expect(
+        service.processGatewayWebhook(mockTenantId, {
+          transactionCode: 'TRX/TEST',
+          gatewayReference: 'REF-1',
+          amountPaid: 100000,
+          paymentStatus: PaymentStatus.SUCCESS,
+          signatureKey: 'zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz',
+        }),
+      ).rejects.toThrow(BadRequestException);
+
+      // 3. Short length (e.g. 32 chars instead of 64)
+      await expect(
+        service.processGatewayWebhook(mockTenantId, {
+          transactionCode: 'TRX/TEST',
+          gatewayReference: 'REF-1',
+          amountPaid: 100000,
+          paymentStatus: PaymentStatus.SUCCESS,
+          signatureKey: '1234567890abcdef1234567890abcdef',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject webhook with timingSafeEqual when signature is mathematically invalid', async () => {
+      const forgedSignature = 'a'.repeat(64); // Valid 64-char hex but forged value
+
+      await expect(
+        service.processGatewayWebhook(mockTenantId, {
+          transactionCode: 'TRX/FORGED',
+          gatewayReference: 'REF-FORGED',
+          amountPaid: 500000,
+          paymentStatus: PaymentStatus.SUCCESS,
+          signatureKey: forgedSignature,
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 });
