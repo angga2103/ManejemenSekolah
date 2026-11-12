@@ -134,10 +134,10 @@ echo ""
 echo -e "${YELLOW}[STEP 3/7] Tuning PostgreSQL and Redis for Low-Memory Footprint...${NC}"
 
 # Configure Redis for max 64MB memory with LRU eviction
-cat > /etc/redis/redis.conf.d/low-mem.conf 2>/dev/null || true
-sed -i 's/^# maxmemory <bytes>/maxmemory 64mb/' /etc/redis/redis.conf || true
-sed -i 's/^# maxmemory-policy noeviction/maxmemory-policy allkeys-lru/' /etc/redis/redis.conf || true
-systemctl restart redis-server || systemctl restart redis
+mkdir -p /etc/redis 2>/dev/null || true
+sed -i 's/^# maxmemory <bytes>/maxmemory 64mb/' /etc/redis/redis.conf 2>/dev/null || true
+sed -i 's/^# maxmemory-policy noeviction/maxmemory-policy allkeys-lru/' /etc/redis/redis.conf 2>/dev/null || true
+systemctl restart redis-server 2>/dev/null || systemctl restart redis 2>/dev/null || true
 
 # Tune PostgreSQL settings for 1GB VPS
 PG_CONF=$(find /etc/postgresql/ -name "postgresql.conf" | head -n 1)
@@ -245,11 +245,16 @@ CORS_ORIGIN="http://${SERVER_IP},http://localhost,http://localhost:3000"
 NODE_OPTIONS="--max-old-space-size=400"
 EOF
 
-# Run Prisma Database Migrations
+# Install workspace dependencies first so local CLI binaries are available
+echo "  -> Installing Node.js dependencies (npm ci)..."
+export NODE_OPTIONS="--max-old-space-size=512"
+npm ci --prefer-offline --no-audit
+
+# Run Prisma Database Migrations using local project Prisma binary
 echo "  -> Running Prisma schema generation and database migration..."
 export DATABASE_URL="postgresql://postgres@localhost:5432/${DB_NAME}?schema=public"
-npx prisma generate --schema=apps/api/prisma/schema.prisma
-npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+./node_modules/.bin/prisma generate --schema=apps/api/prisma/schema.prisma
+./node_modules/.bin/prisma migrate deploy --schema=apps/api/prisma/schema.prisma
 
 # Apply Row Level Security (RLS) DDL
 echo "  -> Applying PostgreSQL Row-Level Security policies to all 53 models..."
@@ -262,10 +267,6 @@ echo -e "  -> ${GREEN}✓ Database initialized and hardened with PostgreSQL RLS.
 # ------------------------------------------------------------------------------
 echo ""
 echo -e "${YELLOW}[STEP 6/7] Building Workspace Packages & Deploying with PM2...${NC}"
-
-# Install dependencies with memory limit
-export NODE_OPTIONS="--max-old-space-size=512"
-npm ci --prefer-offline --no-audit
 
 # Build shared packages, API, and Web Portal
 npm run build --workspaces
