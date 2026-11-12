@@ -226,11 +226,14 @@ SERVER_IP=${SERVER_IP}
 
 # Database Connections
 DATABASE_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@localhost:5432/${DB_NAME}?schema=public"
+DIRECT_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@localhost:5432/${DB_NAME}?schema=public"
 DATABASE_ADMIN_URL="postgresql://postgres@localhost:5432/${DB_NAME}?schema=public"
 
 # Authentication & JWT Secrets
 JWT_SECRET=${JWT_SECRET}
+JWT_ACCESS_SECRET=${JWT_SECRET}
 JWT_EXPIRATION=15m
+JWT_ACCESS_EXPIRATION=15m
 JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
 JWT_REFRESH_EXPIRATION=7d
 
@@ -253,6 +256,7 @@ npm ci --prefer-offline --no-audit
 # Run Prisma Database Migrations using local project Prisma binary
 echo "  -> Running Prisma schema generation and database migration..."
 export DATABASE_URL="postgresql://postgres@localhost:5432/${DB_NAME}?schema=public"
+export DIRECT_URL="postgresql://postgres@localhost:5432/${DB_NAME}?schema=public"
 ./node_modules/.bin/prisma generate --schema=apps/api/prisma/schema.prisma
 ./node_modules/.bin/prisma migrate deploy --schema=apps/api/prisma/schema.prisma
 
