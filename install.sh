@@ -287,12 +287,12 @@ echo "  -> Installing Node.js dependencies (npm ci)..."
 export NODE_OPTIONS="--max-old-space-size=512"
 npm ci --prefer-offline --no-audit
 
-# Run Prisma Database Migrations using local project Prisma binary
-echo "  -> Running Prisma schema generation and database migration..."
+# Run Prisma Database Schema Push using local project Prisma binary
+echo "  -> Synchronizing database schema and creating tables (Prisma db push)..."
 export DATABASE_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
 export DIRECT_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
 ./node_modules/.bin/prisma generate --schema=apps/api/prisma/schema.prisma
-./node_modules/.bin/prisma migrate deploy --schema=apps/api/prisma/schema.prisma
+./node_modules/.bin/prisma db push --schema=apps/api/prisma/schema.prisma --accept-data-loss
 
 # Apply Row Level Security (RLS) DDL
 echo "  -> Applying PostgreSQL Row-Level Security policies to all 53 models..."
