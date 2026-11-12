@@ -27,6 +27,26 @@ export class GuardiansService {
     private auditService: AuditService,
   ) {}
 
+  public maskSensitiveNik(nik?: string | null): string | null {
+    if (!nik) return null;
+    const trimmed = nik.trim();
+    if (trimmed.length <= 4) return '****';
+    return trimmed.slice(0, 4) + '*'.repeat(Math.max(4, trimmed.length - 4));
+  }
+
+  public canViewFullNik(currentUser?: any): boolean {
+    if (!currentUser) return false;
+    const roles: any[] = Array.isArray(currentUser.roles) ? currentUser.roles : [];
+    const isSuperAdmin = roles.some((r: any) => (typeof r === 'string' ? r : r.slug) === 'super_admin');
+    const permissions: string[] = currentUser.permissions || [];
+    const hasManagePermission =
+      permissions.includes('guardians:manage') ||
+      permissions.includes('students:manage') ||
+      permissions.includes('guardians:full_pii');
+    return isSuperAdmin || hasManagePermission;
+  }
+
+
   /**
    * List guardians in tenant
    */
@@ -34,6 +54,7 @@ export class GuardiansService {
     tenantId: string,
     search?: string,
     limit = 50,
+    currentUser?: any,
   ): Promise<GuardianResponseData[]> {
     const where: any = { tenantId };
 
@@ -57,6 +78,7 @@ export class GuardiansService {
       },
     });
 
+    const allowFullNik = this.canViewFullNik(currentUser);
     return guardians.map((g) => ({
       id: g.id,
       tenantId: g.tenantId,
@@ -64,7 +86,7 @@ export class GuardiansService {
       fullName: g.fullName,
       phone: g.phone,
       email: null,
-      nik: g.nik,
+      nik: allowFullNik ? g.nik : this.maskSensitiveNik(g.nik),
       occupation: g.occupation,
       address: g.address,
       linkedStudentsCount: g._count.students,
@@ -75,7 +97,7 @@ export class GuardiansService {
   /**
    * Get guardian by ID
    */
-  async getGuardianById(tenantId: string, id: string): Promise<any> {
+  async getGuardianById(tenantId: string, id: string, currentUser?: any): Promise<any> {
     const guardian = await this.prisma.guardian.findFirst({
       where: { id, tenantId },
       include: {
@@ -92,6 +114,7 @@ export class GuardiansService {
       throw new NotFoundException(`Guardian with ID '${id}' not found`);
     }
 
+    const allowFullNik = this.canViewFullNik(currentUser);
     return {
       id: guardian.id,
       tenantId: guardian.tenantId,
@@ -99,7 +122,7 @@ export class GuardiansService {
       fullName: guardian.fullName,
       phone: guardian.phone,
       email: guardian.user?.email || null,
-      nik: guardian.nik,
+      nik: allowFullNik ? guardian.nik : this.maskSensitiveNik(guardian.nik),
       occupation: guardian.occupation,
       address: guardian.address,
       linkedStudents: guardian.students.map((sg) => ({
@@ -186,7 +209,7 @@ export class GuardiansService {
       fullName: guardian.fullName,
       phone: guardian.phone,
       email: dto.email || null,
-      nik: guardian.nik,
+      nik: this.maskSensitiveNik(guardian.nik),
       occupation: guardian.occupation,
       address: guardian.address,
       linkedStudentsCount: 0,

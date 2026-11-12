@@ -37,14 +37,14 @@ export class GuardiansController {
     @CurrentUser() user: any,
     @Query('search') search?: string,
   ) {
-    return this.guardiansService.listGuardians(user.tenantId, search);
+    return this.guardiansService.listGuardians(user.tenantId, search, 50, user);
   }
 
   @Get(':id')
   @RequirePermissions({ module: PermissionModule.GUARDIANS, action: PermissionAction.VIEW })
   @ApiOperation({ summary: 'Get guardian details and linked students' })
   async getGuardianById(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.guardiansService.getGuardianById(user.tenantId, id);
+    return this.guardiansService.getGuardianById(user.tenantId, id, user);
   }
 
   @Post()
