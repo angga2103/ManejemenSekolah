@@ -29,7 +29,7 @@ import {
 @ApiTags('Master Data: Students (Santri/Siswa)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/master-data/students')
+@Controller('master-data/students')
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 

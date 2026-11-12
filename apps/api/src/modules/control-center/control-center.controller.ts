@@ -28,7 +28,7 @@ import {
 @ApiTags('SaaS Developer Control Center & Subscriptions')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('api/v1/control-center')
+@Controller('control-center')
 export class ControlCenterController {
   constructor(
     private readonly controlCenterService: ControlCenterService,

@@ -23,7 +23,7 @@ import {
 @ApiTags('Master Data: Institutions & Academic Periods')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/master-data')
+@Controller('master-data')
 export class InstitutionsController {
   constructor(private readonly institutionsService: InstitutionsService) {}
 

@@ -26,7 +26,7 @@ import {
 @ApiTags('Master Data: Guardians (Wali Santri / Orang Tua)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/master-data/guardians')
+@Controller('master-data/guardians')
 export class GuardiansController {
   constructor(private readonly guardiansService: GuardiansService) {}
 

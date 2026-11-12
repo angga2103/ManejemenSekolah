@@ -18,7 +18,7 @@ import { CreateEmployeeDto } from '@edusaas/api-contracts';
 @ApiTags('Master Data: Employees (Dewan Guru, Musyrif, Staff)')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/master-data/employees')
+@Controller('master-data/employees')
 export class EmployeesController {
   constructor(private readonly employeesService: EmployeesService) {}
 

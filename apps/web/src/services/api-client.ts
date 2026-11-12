@@ -1,6 +1,6 @@
 import { ApiResponse, ApiErrorResponse } from '@edusaas/api-contracts';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export class ApiClient {
   private static getHeaders(): HeadersInit {

@@ -26,7 +26,7 @@ import {
 @ApiTags('Master Data: Classes & Rombel')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/master-data/classes')
+@Controller('master-data/classes')
 export class ClassesController {
   constructor(private readonly classesService: ClassesService) {}
 

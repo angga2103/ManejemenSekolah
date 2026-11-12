@@ -19,7 +19,7 @@ import { CreateSubjectDto } from '@edusaas/api-contracts';
 @ApiTags('Master Data: Subjects & Curricula')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/master-data/subjects')
+@Controller('master-data/subjects')
 export class SubjectsController {
   constructor(private readonly subjectsService: SubjectsService) {}
 

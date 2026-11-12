@@ -16,7 +16,7 @@ import {
 @ApiTags('RBAC & Permissions')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-@Controller('api/v1/rbac')
+@Controller('rbac')
 export class RbacController {
   constructor(private readonly rbacService: RbacService) {}
 

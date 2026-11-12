@@ -298,6 +298,14 @@ export DIRECT_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NA
 echo "  -> Applying PostgreSQL Row-Level Security policies to all 53 models..."
 sudo -u postgres psql -U postgres -d "$DB_NAME" -f "$APP_DIR/infrastructure/postgres/init-rls.sql" >/dev/null 2>&1 || true
 
+# Seed initial demo tenant (Al-Hikmah), roles, and demo accounts using admin connection
+echo "  -> Seeding demo tenant (Al-Hikmah), system roles, and demo accounts..."
+export DATABASE_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
+./node_modules/.bin/ts-node --transpile-only apps/api/prisma/seed.ts || true
+
+# Copy .env to apps/api/.env for local service discovery
+cp "$APP_DIR/.env" "$APP_DIR/apps/api/.env" 2>/dev/null || true
+
 # Restore runtime application database URL in current environment
 export DATABASE_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
 export DIRECT_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
@@ -331,8 +339,10 @@ if [ ! -f "$ENTRY_FILE" ]; then
 fi
 
 pm2 delete edusaas-api 2>/dev/null || true
+cd "$APP_DIR"
 pm2 start "$ENTRY_FILE" \
   --name "edusaas-api" \
+  --cwd "$APP_DIR" \
   --node-args="--max-old-space-size=350" \
   --max-memory-restart 400M \
   --time
@@ -362,9 +372,9 @@ server {
     gzip on;
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;
 
-    # API Proxy
-    location /api/ {
-        proxy_pass http://127.0.0.1:4000/api/;
+    # API & Swagger Documentation Proxy
+    location /api {
+        proxy_pass http://127.0.0.1:4000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -373,14 +383,6 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 60s;
-    }
-
-    # Swagger Documentation
-    location /api/docs/ {
-        proxy_pass http://127.0.0.1:4000/api/docs/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
     }
 
     # Single Page Application (SPA) Routing Fallback
@@ -415,6 +417,17 @@ Server IP Address : ${SERVER_IP}
 - Web Management Portal : http://${SERVER_IP}
 - Backend REST API      : http://${SERVER_IP}/api/v1
 - Interactive API Docs  : http://${SERVER_IP}/api/docs
+
+[DEMO PORTAL LOGIN ACCOUNTS]
+- Subdomain / Lembaga   : alhikmah
+- Default Password      : Password123!
+- Kepala Sekolah        : admin@alhikmah.sch.id
+- Bendahara             : bendahara@alhikmah.sch.id
+- Dewan Guru            : guru@alhikmah.sch.id
+- Musyrif Asrama        : musyrif@alhikmah.sch.id
+- Satpam / Presensi     : satpam@alhikmah.sch.id
+- Siswa / Santri        : santri@alhikmah.sch.id
+- Wali Santri           : wali@alhikmah.sch.id
 
 [DATABASE CONFIGURATION]
 - Host     : localhost:5432

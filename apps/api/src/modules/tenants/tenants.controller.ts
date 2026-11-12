@@ -22,7 +22,7 @@ import {
 } from '@edusaas/api-contracts';
 
 @ApiTags('Tenants & Institutions')
-@Controller('api/v1/tenants')
+@Controller('tenants')
 export class TenantsController {
   constructor(private readonly tenantsService: TenantsService) {}
 
