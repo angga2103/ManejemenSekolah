@@ -246,11 +246,20 @@ export class PaymentsService {
     tenantId: string,
     dto: PaymentGatewayWebhookDto,
   ): Promise<{ status: string; message: string }> {
-    // 1. Verify Signature: sha256(transactionCode + gatewayReference + amountPaid + gatewaySecret)
+    // 1. Validate signature format & length (SHA-256 hex must be exactly 64 characters)
+    if (!dto.signatureKey || typeof dto.signatureKey !== 'string' || !/^[0-9a-f]{64}$/i.test(dto.signatureKey.trim())) {
+      this.logger.error(`[WEBHOOK-FRAUD] Malformed signature format received for transaction: ${dto.transactionCode}`);
+      throw new BadRequestException('Format tanda tangan digital webhook tidak valid');
+    }
+
+    // 2. Compute expected HMAC/hash and perform constant-time comparison to prevent timing attacks
     const rawSign = `${dto.transactionCode}${dto.gatewayReference}${dto.amountPaid}${this.gatewaySecret}`;
     const expectedSignature = crypto.createHash('sha256').update(rawSign).digest('hex');
 
-    if (dto.signatureKey !== expectedSignature) {
+    const incomingBuf = Buffer.from(dto.signatureKey.trim().toLowerCase(), 'hex');
+    const expectedBuf = Buffer.from(expectedSignature.toLowerCase(), 'hex');
+
+    if (incomingBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(incomingBuf, expectedBuf)) {
       this.logger.error(`[WEBHOOK-FRAUD] Invalid webhook signature for transaction: ${dto.transactionCode}`);
       throw new BadRequestException('Tanda tangan digital webhook tidak valid');
     }

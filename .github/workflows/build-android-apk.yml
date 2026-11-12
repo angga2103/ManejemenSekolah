@@ -1,0 +1,107 @@
+name: Build Android APK (Release & Debug)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Tipe Build APK'
+        required: true
+        default: 'release'
+        type: choice
+        options:
+          - 'release'
+          - 'debug'
+          - 'split-per-abi'
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'apps/mobile/**'
+      - '.github/workflows/build-android-apk.yml'
+
+concurrency:
+  group: apk-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Build Android APK (${{ inputs.build_type || 'release' }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup Java Development Kit (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.5'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Flutter Dependencies
+        working-directory: apps/mobile
+        run: flutter pub get
+
+      - name: Run Static Analysis & Verification
+        working-directory: apps/mobile
+        run: flutter analyze
+
+      - name: Run Unit Tests
+        working-directory: apps/mobile
+        run: flutter test
+
+      - name: Build Android APK (Release Standard)
+        if: ${{ (inputs.build_type == 'release') || (github.event_name == 'push') }}
+        working-directory: apps/mobile
+        run: flutter build apk --release
+
+      - name: Build Android APK (Debug)
+        if: ${{ inputs.build_type == 'debug' }}
+        working-directory: apps/mobile
+        run: flutter build apk --debug
+
+      - name: Build Android APK (Split per ABI)
+        if: ${{ inputs.build_type == 'split-per-abi' }}
+        working-directory: apps/mobile
+        run: flutter build apk --release --split-per-abi
+
+      - name: Upload APK Artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: edusaas-mobile-android-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/*.apk
+          retention-days: 30
+
+      - name: Publish APK Directly to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: "v0.1.0-alpha"
+          name: "EduSaaS Mobile Android v0.1.0 (Alpha)"
+          body: |
+            ### 📱 EduSaaS Mobile Android APK (Ready to Install)
+            File APK siap unduh dan langsung diinstal pada smartphone Android santri, ustadz, dan wali santri.
+            
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** `${{ github.sha }}`
+            - **Tipe:** `${{ inputs.build_type || 'release' }}`
+          files: apps/mobile/build/app/outputs/flutter-apk/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary & Next Steps
+        run: |
+          echo "### 📱 Android APK Build Selesai!" >> $GITHUB_STEP_SUMMARY
+          echo "File APK berhasil dikompilasi dan diunggah sebagai artifact." >> $GITHUB_STEP_SUMMARY
+          echo "- **Tipe Build:** ${{ inputs.build_type || 'release' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cara Download:** Buka tab **Actions** -> Klik workflow run ini -> Scroll ke bagian **Artifacts** -> Unduh **edusaas-mobile-android-apk**." >> $GITHUB_STEP_SUMMARY

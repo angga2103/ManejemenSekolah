@@ -113,4 +113,82 @@ describe('GuardiansService', () => {
       expect(mockAudit.record).toHaveBeenCalled();
     });
   });
+  describe('Guardian PII & NIK Masking Protection', () => {
+    it('should mask NIK in listGuardians when caller is not authorized for full PII', async () => {
+      mockPrisma.guardian.findMany.mockResolvedValue([
+        {
+          id: 'g-1',
+          tenantId: 'tenant-1',
+          userId: 'u-1',
+          fullName: 'Bapak Ahmad',
+          phone: '0812345678',
+          nik: '3201123456780001',
+          occupation: 'Wiraswasta',
+          address: 'Jl. Merdeka No. 1',
+          _count: { students: 1 },
+          createdAt: new Date(),
+        },
+      ]);
+
+      const res = await service.listGuardians('tenant-1', undefined, 50, {
+        roles: ['teacher'],
+        permissions: ['guardians:view'],
+      });
+
+      expect(res[0].nik).toBe('3201************');
+    });
+
+    it('should return unmasked NIK in listGuardians for super_admin or authorized manage roles', async () => {
+      mockPrisma.guardian.findMany.mockResolvedValue([
+        {
+          id: 'g-1',
+          tenantId: 'tenant-1',
+          userId: 'u-1',
+          fullName: 'Bapak Ahmad',
+          phone: '0812345678',
+          nik: '3201123456780001',
+          occupation: 'Wiraswasta',
+          address: 'Jl. Merdeka No. 1',
+          _count: { students: 1 },
+          createdAt: new Date(),
+        },
+      ]);
+
+      const res = await service.listGuardians('tenant-1', undefined, 50, {
+        roles: ['super_admin'],
+        permissions: ['guardians:manage'],
+      });
+
+      expect(res[0].nik).toBe('3201123456780001');
+    });
+
+    it('should mask NIK in getGuardianById by default and reveal for authorized roles', async () => {
+      mockPrisma.guardian.findFirst.mockResolvedValue({
+        id: 'g-1',
+        tenantId: 'tenant-1',
+        userId: 'u-1',
+        fullName: 'Ibu Fatimah',
+        phone: '0812987654',
+        nik: '3201998877660002',
+        occupation: 'PNS',
+        address: 'Jl. Melati',
+        user: { email: 'fatimah@example.com' },
+        students: [],
+      });
+
+      // 1. Unprivileged user
+      const maskedRes = await service.getGuardianById('tenant-1', 'g-1', {
+        roles: ['staff'],
+        permissions: [],
+      });
+      expect(maskedRes.nik).toBe('3201************');
+
+      // 2. Authorized role (students:manage)
+      const fullRes = await service.getGuardianById('tenant-1', 'g-1', {
+        roles: ['admin'],
+        permissions: ['students:manage'],
+      });
+      expect(fullRes.nik).toBe('3201998877660002');
+    });
+  });
 });
