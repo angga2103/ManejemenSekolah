@@ -9,8 +9,13 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Security Headers
-  app.use(helmet());
+  // Security Headers (Disable CSP so Swagger UI loads without blank page)
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   // Global Input Validation
   app.useGlobalPipes(
@@ -25,10 +30,9 @@ async function bootstrap() {
   const globalPrefix = process.env.API_PREFIX || 'api/v1';
   app.setGlobalPrefix(globalPrefix);
 
-  // CORS Configuration
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000').split(',');
+  // CORS Configuration (Allow frontend web portal and mobile clients)
   app.enableCors({
-    origin: allowedOrigins,
+    origin: true,
     credentials: true,
   });
 

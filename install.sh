@@ -343,12 +343,22 @@ cd "$APP_DIR"
 pm2 start "$ENTRY_FILE" \
   --name "edusaas-api" \
   --cwd "$APP_DIR" \
+  --update-env \
   --node-args="--max-old-space-size=350" \
   --max-memory-restart 400M \
   --time
 
 pm2 save
 pm2 startup systemd -u root --hp /root >/dev/null 2>&1 || true
+
+echo "  -> Verifying API health on port 4000..."
+sleep 4
+if curl -fsSL http://127.0.0.1:4000/api/docs >/dev/null 2>&1; then
+  echo -e "  -> ${GREEN}✓ Backend API is responding successfully on port 4000.${NC}"
+else
+  echo -e "  -> ${YELLOW}Backend API is warming up. Recent PM2 logs:${NC}"
+  pm2 logs edusaas-api --lines 20 --nostream || true
+fi
 
 # ------------------------------------------------------------------------------
 # 7. CONFIGURE NGINX WEB SERVER & REVERSE PROXY
