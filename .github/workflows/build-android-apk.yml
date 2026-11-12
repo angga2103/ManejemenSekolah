@@ -22,6 +22,9 @@ concurrency:
   group: apk-build-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+
 jobs:
   build-android:
     name: Build Android APK (${{ inputs.build_type || 'release' }})
@@ -78,6 +81,23 @@ jobs:
           name: edusaas-mobile-android-apk
           path: apps/mobile/build/app/outputs/flutter-apk/*.apk
           retention-days: 30
+
+      - name: Publish APK Directly to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: success()
+        with:
+          tag_name: "v0.1.0-alpha"
+          name: "EduSaaS Mobile Android v0.1.0 (Alpha)"
+          body: |
+            ### 📱 EduSaaS Mobile Android APK (Ready to Install)
+            File APK siap unduh dan langsung diinstal pada smartphone Android santri, ustadz, dan wali santri.
+            
+            - **Branch:** `${{ github.ref_name }}`
+            - **Commit:** `${{ github.sha }}`
+            - **Tipe:** `${{ inputs.build_type || 'release' }}`
+          files: apps/mobile/build/app/outputs/flutter-apk/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summary & Next Steps
         run: |
