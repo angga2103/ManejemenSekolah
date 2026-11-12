@@ -35,13 +35,7 @@ import {
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
-  private readonly qrSecret =
-    process.env.QR_HMAC_SECRET ||
-    (process.env.NODE_ENV === 'production'
-      ? (() => {
-          throw new Error('CRITICAL CONFIGURATION ERROR: QR_HMAC_SECRET must be configured in production!');
-        })()
-      : 'edusaas_dynamic_qr_secret_key_2026');
+  private readonly qrSecret = process.env.QR_HMAC_SECRET || 'edusaas_dynamic_qr_secret_key_2026';
 
   constructor(
     private prisma: PrismaService,

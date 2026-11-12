@@ -213,6 +213,8 @@ DB_APP_PASS=$(openssl rand -hex 16)
 DB_ADMIN_PASS=$(openssl rand -hex 16)
 JWT_SECRET=$(openssl rand -hex 32)
 JWT_REFRESH_SECRET=$(openssl rand -hex 32)
+QR_HMAC_SECRET=$(openssl rand -hex 32)
+PAYMENT_GATEWAY_SECRET=$(openssl rand -hex 32)
 SERVER_IP=$(curl -s -4 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
 
 # Setup PostgreSQL Database & Users via psql
@@ -270,6 +272,10 @@ JWT_EXPIRATION=15m
 JWT_ACCESS_EXPIRATION=15m
 JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
 JWT_REFRESH_EXPIRATION=7d
+
+# Cryptographic & Payment Gateway Secrets
+QR_HMAC_SECRET=${QR_HMAC_SECRET}
+PAYMENT_GATEWAY_SECRET=${PAYMENT_GATEWAY_SECRET}
 
 # Cache & Queues (Redis)
 REDIS_HOST=127.0.0.1

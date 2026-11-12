@@ -22,13 +22,7 @@ import {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly gatewaySecret =
-    process.env.PAYMENT_GATEWAY_SECRET ||
-    (process.env.NODE_ENV === 'production'
-      ? (() => {
-          throw new Error('CRITICAL CONFIGURATION ERROR: PAYMENT_GATEWAY_SECRET must be configured in production!');
-        })()
-      : 'edusaas_payment_secret_2026');
+  private readonly gatewaySecret = process.env.PAYMENT_GATEWAY_SECRET || 'edusaas_payment_secret_2026';
 
   constructor(
     private prisma: PrismaService,
