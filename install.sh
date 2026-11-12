@@ -173,9 +173,19 @@ echo -e "${YELLOW}[STEP 4/7] Preparing Application Codebase...${NC}"
 APP_DIR="/var/www/edusaas"
 mkdir -p "$APP_DIR"
 
-if [ -f "package.json" ] && [ -d "apps/api" ]; then
-  echo "  -> Installer running from repository root. Copying code to $APP_DIR..."
-  cp -r . "$APP_DIR/"
+CURRENT_DIR="$(pwd -P 2>/dev/null || pwd)"
+
+if [ "$CURRENT_DIR" = "$APP_DIR" ]; then
+  echo "  -> Installer running inside $APP_DIR. Checking git repository status..."
+  if [ -d "$APP_DIR/.git" ]; then
+    echo "  -> Pulling latest develop branch in $APP_DIR..."
+    git fetch origin develop 2>/dev/null || true
+    git checkout develop 2>/dev/null || true
+    git pull origin develop 2>/dev/null || true
+  fi
+elif [ -f "package.json" ] && [ -d "apps/api" ]; then
+  echo "  -> Installer running from local directory ($CURRENT_DIR). Synchronizing codebase to $APP_DIR..."
+  rsync -a --exclude='.git' --exclude='node_modules' . "$APP_DIR/" 2>/dev/null || cp -rf . "$APP_DIR/" 2>/dev/null || true
 else
   if [ -d "$APP_DIR/.git" ]; then
     echo "  -> Repository exists at $APP_DIR. Pulling latest develop branch..."
@@ -208,7 +218,9 @@ SERVER_IP=$(curl -s -4 https://api.ipify.org 2>/dev/null || hostname -I | awk '{
 # Setup PostgreSQL Database & Users via psql
 echo "  -> Configuring database, extensions, and application roles..."
 sudo -u postgres psql -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '${DB_ADMIN_PASS}';"
-sudo -u postgres psql -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" | grep -q 1 || sudo -u postgres psql -U postgres -d postgres -c "CREATE DATABASE ${DB_NAME};"
+if ! sudo -u postgres psql -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" 2>/dev/null | grep -q 1; then
+  sudo -u postgres psql -U postgres -d postgres -c "CREATE DATABASE ${DB_NAME};"
+fi
 sudo -u postgres psql -U postgres -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO postgres;"
 sudo -u postgres psql -U postgres -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 sudo -u postgres psql -U postgres -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";"
@@ -299,7 +311,8 @@ echo ""
 echo -e "${YELLOW}[STEP 6/7] Building Workspace Packages & Deploying with PM2...${NC}"
 
 # Build shared packages, API, and Web Portal
-npm run build --workspaces
+export NODE_OPTIONS="--max-old-space-size=512"
+npm run build --workspaces --if-present
 
 # Configure PM2 to run the Backend API
 ENTRY_FILE="apps/api/dist/src/main.js"
