@@ -85,7 +85,17 @@ async function runRealPostgresRlsAudit() {
     }
 
     // 3. Check Table RLS Status
-    const tablesChecked = ['students', 'attendances', 'invoices', 'payments'];
+    const tablesChecked = [
+      'students',
+      'attendances',
+      'invoices',
+      'payments',
+      'dormitories',
+      'dorm_rooms',
+      'cbt_exams',
+      'student_exam_sessions',
+      'student_exam_answers',
+    ];
     const rlsStatusResult = await prisma.$queryRawUnsafe(`
       SELECT relname, relrowsecurity, relforcerowsecurity 
       FROM pg_class 
@@ -265,6 +275,7 @@ async function runRealPostgresRlsAudit() {
     // 8. Super Admin official bypass
     await prisma.$transaction(async (tx) => {
       await tx.$executeRawUnsafe(`SELECT set_config('app.is_super_admin', 'true', true);`);
+      await tx.$executeRawUnsafe(`SELECT set_config('app.super_admin_bypass_reason', 'OFFICIAL_SUPERADMIN_AUDIT_VERIFICATION_PASS', true);`);
       const allStudents = await tx.$queryRawUnsafe(`SELECT count(*) as cnt FROM students WHERE tenant_id IN ('${tenantA}', '${tenantB}');`);
       const count = Number(allStudents[0].cnt);
       if (count >= 2) {

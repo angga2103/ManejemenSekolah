@@ -45,7 +45,7 @@ describe('[Database Security Audit] PostgreSQL Row-Level Security (RLS) & Sessio
   });
 
   describe('1. Transaction-Scoped RLS Context Injection (SET LOCAL)', () => {
-    it('should set local tenant_id and disable super_admin bypass for tenant transactions', async () => {
+    it('should set local tenant_id and disable super_admin bypass and clear bypass reason for tenant transactions', async () => {
       const result = await prismaService.withTenantContext(validTenantA, async (tx: any) => {
         return tx.student.findMany();
       });
@@ -61,6 +61,10 @@ describe('[Database Security Audit] PostgreSQL Row-Level Security (RLS) & Sessio
       expect(mockExecuteRaw).toHaveBeenCalledWith(
         expect.arrayContaining([expect.stringContaining("SELECT set_config('app.is_super_admin'")]),
         'false',
+      );
+      expect(mockExecuteRaw).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining("SELECT set_config('app.super_admin_bypass_reason'")]),
+        '',
       );
     });
 
@@ -107,6 +111,44 @@ describe('[Database Security Audit] PostgreSQL Row-Level Security (RLS) & Sessio
         expect.arrayContaining([expect.stringContaining("SELECT set_config('app.is_super_admin'")]),
         'true',
       );
+      expect(mockExecuteRaw).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining("SELECT set_config('app.super_admin_bypass_reason'")]),
+        expect.stringMatching(/.{10,}/),
+      );
+    });
+
+    it('should reject super admin bypass if audit reason is shorter than 10 characters', async () => {
+      await expect(
+        prismaService.withSuperAdminContext('short', async (tx: any) => tx.student.findMany()),
+      ).rejects.toThrow(BadRequestException);
+
+      await expect(
+        prismaService.withSuperAdminContext(
+          { reason: 'too-short', adminUserId: '11111111-1111-1111-1111-111111111111' },
+          async (tx: any) => tx.student.findMany(),
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept valid options and configure audit reason in withSuperAdminContext', async () => {
+      const validReason = 'EMERGENCY_AUDIT_INVESTIGATION_2026';
+      await prismaService.withSuperAdminContext(
+        {
+          reason: validReason,
+          adminUserId: '11111111-1111-1111-1111-111111111111',
+          actionType: 'COMPLIANCE_REVIEW',
+        },
+        async (tx: any) => tx.student.findMany(),
+      );
+
+      expect(mockExecuteRaw).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining("SELECT set_config('app.is_super_admin'")]),
+        'true',
+      );
+      expect(mockExecuteRaw).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining("SELECT set_config('app.super_admin_bypass_reason'")]),
+        validReason,
+      );
     });
 
     it('should ensure tenant transactions explicitly reset is_super_admin to false', async () => {
@@ -115,6 +157,10 @@ describe('[Database Security Audit] PostgreSQL Row-Level Security (RLS) & Sessio
       expect(mockExecuteRaw).toHaveBeenCalledWith(
         expect.arrayContaining([expect.stringContaining("SELECT set_config('app.is_super_admin'")]),
         'false',
+      );
+      expect(mockExecuteRaw).toHaveBeenCalledWith(
+        expect.arrayContaining([expect.stringContaining("SELECT set_config('app.super_admin_bypass_reason'")]),
+        '',
       );
     });
   });
