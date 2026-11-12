@@ -26,6 +26,13 @@ export class StudentsService {
     private auditService: AuditService,
   ) {}
 
+  public maskSensitiveNik(nik?: string | null): string | null {
+    if (!nik) return null;
+    const trimmed = nik.trim();
+    if (trimmed.length <= 4) return '****';
+    return trimmed.slice(0, 4) + '*'.repeat(Math.max(4, trimmed.length - 4));
+  }
+
   /**
    * List students with filtering, search, and pagination
    */
@@ -94,7 +101,7 @@ export class StudentsService {
         userId: s.userId,
         nis: s.nis,
         nisn: s.nisn,
-        nik: s.nik,
+        nik: this.maskSensitiveNik(s.nik),
         fullName: s.fullName,
         gender: s.gender as unknown as Gender,
         birthPlace: s.birthPlace,
@@ -152,7 +159,7 @@ export class StudentsService {
       userId: student.userId,
       nis: student.nis,
       nisn: student.nisn,
-      nik: student.nik,
+      nik: this.maskSensitiveNik(student.nik),
       fullName: student.fullName,
       gender: student.gender,
       birthPlace: student.birthPlace,

@@ -27,7 +27,9 @@ describe('DormitoryService', () => {
         findFirst: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn(),
+        count: jest.fn().mockResolvedValue(0),
       },
+      $transaction: jest.fn((callback) => (typeof callback === 'function' ? callback(prisma) : Promise.all(callback))),
       student: {
         findFirst: jest.fn(),
       },

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import {
   AttendanceStatus,
   AttendanceMethod,
   LeaveStatus,
+  SystemRoleSlug,
 } from '@edusaas/shared-types';
 import {
   GenerateDynamicQrDto,
@@ -33,7 +35,13 @@ import {
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
-  private readonly qrSecret = process.env.QR_HMAC_SECRET || 'edusaas_dynamic_qr_secret_key_2026';
+  private readonly qrSecret =
+    process.env.QR_HMAC_SECRET ||
+    (process.env.NODE_ENV === 'production'
+      ? (() => {
+          throw new Error('CRITICAL CONFIGURATION ERROR: QR_HMAC_SECRET must be configured in production!');
+        })()
+      : 'edusaas_dynamic_qr_secret_key_2026');
 
   constructor(
     private prisma: PrismaService,
@@ -94,7 +102,29 @@ export class AttendanceService {
   async verifyAndRecordDynamicQr(
     tenantId: string,
     dto: VerifyDynamicQrDto,
+    currentUser?: any,
   ): Promise<AttendanceResponseData> {
+    if (currentUser) {
+      const roleList = Array.isArray(currentUser.roles) ? currentUser.roles : [];
+      const isStudent = roleList.some(
+        (r: any) =>
+          (typeof r === 'string' ? r : r.slug) === SystemRoleSlug.STUDENT ||
+          (typeof r === 'string' ? r : r.slug) === 'student' ||
+          (typeof r === 'string' ? r : r.slug) === 'santri',
+      );
+
+      if (isStudent) {
+        const student = await this.prisma.student.findFirst({
+          where: { userId: currentUser.id, tenantId, deletedAt: null },
+        });
+
+        if (!student || student.id !== dto.studentId) {
+          throw new ForbiddenException(
+            'Santri/Siswa hanya dapat merekam presensi untuk akun miliknya sendiri (anti-titip presensi)',
+          );
+        }
+      }
+    }
     let payload: DynamicQrPayload;
     try {
       const decodedStr = Buffer.from(dto.token, 'base64url').toString('utf8');

@@ -188,53 +188,7 @@ export class AuthService {
       };
     }
 
-    // Fallback baseline for unit tests / pre-seeded mock environments
-    if (dto.identifier && dto.password) {
-      const mockUserId = '11111111-1111-1111-1111-111111111111';
-      const mockTenantId = resolvedTenantId || '99999999-9999-9999-9999-999999999999';
-
-      const roles = [
-        {
-          id: 'role-1',
-          name: 'Principal / Head of Pesantren',
-          slug: SystemRoleSlug.PRINCIPAL,
-          permissions: ['*'],
-        },
-      ];
-
-      const activeRole = roles[0];
-
-      const tokens = await this.generateTokens(
-        mockUserId,
-        mockTenantId,
-        dto.identifier,
-        undefined,
-        roles,
-        activeRole,
-        ipAddress,
-        userAgent,
-      );
-
-      return {
-        user: {
-          id: mockUserId,
-          tenantId: mockTenantId,
-          email: dto.identifier.includes('@') ? dto.identifier : null,
-          phone: !dto.identifier.includes('@') ? dto.identifier : null,
-          fullName: 'Administrator Yayasan',
-          roles: roles.map((r) => ({ id: r.id, name: r.name, slug: r.slug })),
-          activeRole: {
-            id: activeRole.id,
-            name: activeRole.name,
-            slug: activeRole.slug,
-            permissions: activeRole.permissions,
-          },
-        },
-        tokens,
-      };
-    }
-
-    throw new UnauthorizedException('Invalid credentials');
+    throw new UnauthorizedException('Kredensial login tidak valid');
   }
 
   /**

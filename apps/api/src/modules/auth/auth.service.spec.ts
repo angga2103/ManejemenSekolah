@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as bcrypt from 'bcrypt';
+import { UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -16,7 +18,7 @@ describe('AuthService', () => {
     user: {
       findFirst: jest.fn(),
       findUnique: jest.fn(),
-      update: jest.fn(),
+      update: jest.fn().mockResolvedValue({}),
     },
     role: {
       findUnique: jest.fn(),
@@ -64,7 +66,31 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  it('should authenticate valid login request', async () => {
+  it('should authenticate valid login request with bcrypt verification', async () => {
+    const hashedPassword = await bcrypt.hash('SecurePassword123!', 10);
+    mockPrisma.user.findFirst.mockResolvedValue({
+      id: 'user-1',
+      tenantId: 'tenant-1',
+      email: 'admin@pesantren.id',
+      phone: null,
+      passwordHash: hashedPassword,
+      fullName: 'Administrator Yayasan',
+      isActive: true,
+      tenant: { id: 'tenant-1', status: 'ACTIVE' },
+      userRoles: [
+        {
+          role: {
+            id: 'role-1',
+            name: 'Principal / Head of Pesantren',
+            slug: SystemRoleSlug.PRINCIPAL,
+            rolePermissions: [
+              { permission: { module: 'TENANT', action: 'MANAGE' } },
+            ],
+          },
+        },
+      ],
+    });
+
     const res = await service.validateAndLogin({
       identifier: 'admin@pesantren.id',
       password: 'SecurePassword123!',
@@ -74,6 +100,36 @@ describe('AuthService', () => {
     expect(res.tokens.accessToken).toBe('mock_token');
     expect(res.user.fullName).toBe('Administrator Yayasan');
     expect(res.user.activeRole.slug).toBe(SystemRoleSlug.PRINCIPAL);
+  });
+
+  it('should reject invalid credentials with UnauthorizedException', async () => {
+    mockPrisma.user.findFirst.mockResolvedValue(null);
+    await expect(
+      service.validateAndLogin({
+        identifier: 'nonexistent@pesantren.id',
+        password: 'RandomPassword!',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it('should reject incorrect password with UnauthorizedException', async () => {
+    const hashedPassword = await bcrypt.hash('CorrectPassword123!', 10);
+    mockPrisma.user.findFirst.mockResolvedValue({
+      id: 'user-1',
+      tenantId: 'tenant-1',
+      email: 'admin@pesantren.id',
+      passwordHash: hashedPassword,
+      isActive: true,
+      tenant: { id: 'tenant-1', status: 'ACTIVE' },
+      userRoles: [],
+    });
+
+    await expect(
+      service.validateAndLogin({
+        identifier: 'admin@pesantren.id',
+        password: 'WrongPassword!',
+      }),
+    ).rejects.toThrow(UnauthorizedException);
   });
 
   it('should refresh valid refresh token', async () => {

@@ -46,7 +46,7 @@ export class AttendanceController {
     @Body() dto: VerifyDynamicQrDto,
   ) {
     const tenantId = req.user.tenantId;
-    return this.attendanceService.verifyAndRecordDynamicQr(tenantId, dto);
+    return this.attendanceService.verifyAndRecordDynamicQr(tenantId, dto, req.user);
   }
 
   @Post('record')

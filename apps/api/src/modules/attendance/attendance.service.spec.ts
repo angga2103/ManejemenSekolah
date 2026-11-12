@@ -3,7 +3,7 @@ import { AttendanceService } from './attendance.service';
 import { PrismaService } from '../../common/prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AttendanceType, AttendanceStatus, AttendanceMethod } from '@edusaas/shared-types';
 
 describe('AttendanceService', () => {
@@ -102,6 +102,32 @@ describe('AttendanceService', () => {
           studentId: mockStudentId,
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject QR verification if student tries to check in for another student (anti-proxy)', async () => {
+      const validQr = service.generateDynamicQr(mockTenantId, {
+        type: AttendanceType.CLASS,
+        validitySeconds: 60,
+      });
+
+      prisma.student.findFirst.mockResolvedValue({
+        id: 'different-student-id',
+        userId: 'user-student-1',
+      });
+
+      await expect(
+        service.verifyAndRecordDynamicQr(
+          mockTenantId,
+          {
+            token: validQr.token,
+            studentId: mockStudentId,
+          },
+          {
+            id: 'user-student-1',
+            roles: ['student'],
+          },
+        ),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 

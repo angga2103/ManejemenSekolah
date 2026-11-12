@@ -453,7 +453,7 @@ export class CbtService {
     studentUserId: string,
     sessionId: string,
     dto: SubmitExamAnswerDto,
-  ): Promise<{ success: boolean; isCorrect: boolean | null }> {
+  ): Promise<{ success: boolean; questionId: string }> {
     const session = await this.prisma.studentExamSession.findFirst({
       where: { id: sessionId, tenantId },
       include: {
@@ -464,6 +464,9 @@ export class CbtService {
 
     if (!session) {
       throw new NotFoundException(`Exam session ${sessionId} not found`);
+    }
+    if (session.student?.userId && session.student.userId !== studentUserId) {
+      throw new ForbiddenException('Anda tidak berhak mengakses atau menjawab sesi ujian santri lain');
     }
 
     if (session.status !== ExamSessionStatus.IN_PROGRESS) {
@@ -513,7 +516,7 @@ export class CbtService {
 
     return {
       success: true,
-      isCorrect,
+      questionId: dto.questionId,
     };
   }
 

@@ -22,7 +22,13 @@ import {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
-  private readonly gatewaySecret = process.env.PAYMENT_GATEWAY_SECRET || 'edusaas_payment_secret_2026';
+  private readonly gatewaySecret =
+    process.env.PAYMENT_GATEWAY_SECRET ||
+    (process.env.NODE_ENV === 'production'
+      ? (() => {
+          throw new Error('CRITICAL CONFIGURATION ERROR: PAYMENT_GATEWAY_SECRET must be configured in production!');
+        })()
+      : 'edusaas_payment_secret_2026');
 
   constructor(
     private prisma: PrismaService,
@@ -275,8 +281,10 @@ export class PaymentsService {
       return { status: 'OK', message: 'Transaksi telah diproses sebelumnya' };
     }
 
+    const authoritativeTenantId = payment.tenantId;
+
     if (dto.paymentStatus === PaymentStatus.SUCCESS) {
-      const receiptNumber = await this.generateReceiptNumber(tenantId);
+      const receiptNumber = await this.generateReceiptNumber(authoritativeTenantId);
       const invoice = payment.invoice;
       const amountPaid = Number(payment.amountPaid);
       const newPaid = Number(invoice.paidAmount) + amountPaid;
@@ -309,7 +317,7 @@ export class PaymentsService {
         newRemaining,
       );
 
-      await this.notifyPaymentReceipt(tenantId, invoice.studentId, receipt);
+      await this.notifyPaymentReceipt(authoritativeTenantId, invoice.studentId, receipt);
 
       this.logger.log(`[WEBHOOK-SUCCESS] Payment completed via gateway: ${dto.transactionCode}`);
       return { status: 'SUCCESS', message: 'Pembayaran sukses diverifikasi gateway' };

@@ -310,19 +310,28 @@ describe('CbtService', () => {
 
       prisma.studentExamAnswer.upsert.mockResolvedValue({});
 
-      // Test correct answer
-      const resCorrect = await service.submitAnswer(mockTenantId, mockUserId, 'session-1', {
+      // Test answer submission (secure: does NOT leak isCorrect)
+      const res = await service.submitAnswer(mockTenantId, mockUserId, 'session-1', {
         questionId: 'q-1',
         selectedOption: 'C',
       });
-      expect(resCorrect.isCorrect).toBe(true);
+      expect(res.success).toBe(true);
+      expect(res.questionId).toBe('q-1');
+    });
 
-      // Test incorrect answer
-      const resWrong = await service.submitAnswer(mockTenantId, mockUserId, 'session-1', {
-        questionId: 'q-1',
-        selectedOption: 'A',
+    it('should reject answer submission for another student session with ForbiddenException', async () => {
+      prisma.studentExamSession.findFirst.mockResolvedValue({
+        id: 'session-1',
+        status: ExamSessionStatus.IN_PROGRESS,
+        student: { id: 'student-other', userId: 'different-user-uuid' },
       });
-      expect(resWrong.isCorrect).toBe(false);
+
+      await expect(
+        service.submitAnswer(mockTenantId, mockUserId, 'session-1', {
+          questionId: 'q-1',
+          selectedOption: 'C',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
 
     it('should finish exam session, calculate score percentage, pass/fail status, and auto-sync to Grade Engine', async () => {

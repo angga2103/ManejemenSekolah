@@ -105,6 +105,26 @@ describe('StudentsService', () => {
         NotFoundException,
       );
     });
+
+    it('should return student with masked NIK to protect PII privacy', async () => {
+      mockPrisma.student.findFirst.mockResolvedValue({
+        id: 's-1',
+        tenantId: 'tenant-1',
+        nis: '10001',
+        nik: '3201123456780001',
+        fullName: 'Ahmad Santri',
+        gender: Gender.MALE,
+        birthPlace: 'Jakarta',
+        birthDate: new Date('2010-05-15'),
+        status: StudentStatus.ACTIVE,
+        admissionYear: 2026,
+        classStudents: [],
+        guardians: [],
+      });
+
+      const res = await service.getStudentById('tenant-1', 's-1');
+      expect(res.nik).toBe('3201************');
+    });
   });
 
   describe('deleteStudent', () => {

@@ -60,32 +60,45 @@ export class InvoicesService {
     const dueDate = new Date(dto.dueDate);
     dueDate.setHours(23, 59, 59, 999);
 
-    const invoiceNumber = await this.generateInvoiceNumber(tenantId);
-
-    const created = await this.prisma.invoice.create({
-      data: {
-        tenantId,
-        studentId: dto.studentId,
-        billingCategoryId: dto.billingCategoryId,
-        invoiceNumber,
-        title: dto.title.trim(),
-        totalAmount: dto.totalAmount,
-        paidAmount: 0,
-        remainingAmount: dto.totalAmount,
-        status: InvoiceStatus.UNPAID,
-        dueDate,
-      },
-      include: {
-        student: {
-          include: {
-            classStudents: {
-              include: { classGroup: true },
-            },
+    let invoiceNumber = '';
+    let created: any;
+    let attempts = 0;
+    while (attempts < 5) {
+      try {
+        invoiceNumber = await this.generateInvoiceNumber(tenantId, attempts);
+        created = await this.prisma.invoice.create({
+          data: {
+            tenantId,
+            studentId: dto.studentId,
+            billingCategoryId: dto.billingCategoryId,
+            invoiceNumber,
+            title: dto.title.trim(),
+            totalAmount: dto.totalAmount,
+            paidAmount: 0,
+            remainingAmount: dto.totalAmount,
+            status: InvoiceStatus.UNPAID,
+            dueDate,
           },
-        },
-        billingCategory: true,
-      },
-    });
+          include: {
+            student: {
+              include: {
+                classStudents: {
+                  include: { classGroup: true },
+                },
+              },
+            },
+            billingCategory: true,
+          },
+        });
+        break;
+      } catch (err: any) {
+        if (err.code === 'P2002' && attempts < 4) {
+          attempts++;
+          continue;
+        }
+        throw err;
+      }
+    }
 
     await this.auditService.record({
       tenantId,
@@ -168,31 +181,44 @@ export class InvoicesService {
         continue;
       }
 
-      const invoiceNumber = await this.generateInvoiceNumber(tenantId);
-      const created = await this.prisma.invoice.create({
-        data: {
-          tenantId,
-          studentId: student.id,
-          billingCategoryId: dto.billingCategoryId,
-          invoiceNumber,
-          title: dto.title.trim(),
-          totalAmount: dto.amount,
-          paidAmount: 0,
-          remainingAmount: dto.amount,
-          status: InvoiceStatus.UNPAID,
-          dueDate,
-        },
-        include: {
-          student: {
-            include: {
-              classStudents: {
-                include: { classGroup: true },
-              },
+      let created: any;
+      let attempts = 0;
+      while (attempts < 5) {
+        try {
+          const invoiceNumber = await this.generateInvoiceNumber(tenantId, generatedCount + attempts);
+          created = await this.prisma.invoice.create({
+            data: {
+              tenantId,
+              studentId: student.id,
+              billingCategoryId: dto.billingCategoryId,
+              invoiceNumber,
+              title: dto.title.trim(),
+              totalAmount: dto.amount,
+              paidAmount: 0,
+              remainingAmount: dto.amount,
+              status: InvoiceStatus.UNPAID,
+              dueDate,
             },
-          },
-          billingCategory: true,
-        },
-      });
+            include: {
+              student: {
+                include: {
+                  classStudents: {
+                    include: { classGroup: true },
+                  },
+                },
+              },
+              billingCategory: true,
+            },
+          });
+          break;
+        } catch (err: any) {
+          if (err.code === 'P2002' && attempts < 4) {
+            attempts++;
+            continue;
+          }
+          throw err;
+        }
+      }
 
       generatedCount++;
       createdInvoices.push(this.mapToResponse(created));
@@ -339,7 +365,7 @@ export class InvoicesService {
     return this.mapToResponse(invoice);
   }
 
-  private async generateInvoiceNumber(tenantId: string): Promise<string> {
+  private async generateInvoiceNumber(tenantId: string, offset = 0): Promise<string> {
     const now = new Date();
     const yearMonth = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`;
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -351,7 +377,7 @@ export class InvoicesService {
       },
     });
 
-    const sequence = String(count + 1).padStart(4, '0');
+    const sequence = String(count + 1 + offset).padStart(4, '0');
     return `INV/${yearMonth}/${sequence}`;
   }
 

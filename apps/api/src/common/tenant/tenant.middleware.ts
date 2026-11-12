@@ -5,7 +5,7 @@ import { TenantContext } from './tenant-context';
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
-    let tenantId = req.headers['x-tenant-id'] as string | undefined;
+    const tenantId = req.headers['x-tenant-id'] as string | undefined;
     let tenantSlug: string | undefined;
 
     // Check host subdomain (e.g., madrasah-alhikmah.edusaas.id)
@@ -19,7 +19,8 @@ export class TenantMiddleware implements NestMiddleware {
       {
         tenantId,
         tenantSlug,
-        isSuperAdmin: req.headers['x-super-admin'] === 'true',
+        // Do NOT trust unauthenticated client headers for super admin privileges
+        isSuperAdmin: false,
       },
       () => {
         next();
