@@ -96,3 +96,31 @@ BEGIN
         END IF;
     END LOOP;
 END $$;
+
+
+-- ==============================================================================
+-- APPLICATION DATABASE ROLE (NON-SUPERUSER, NOBYPASSRLS)
+-- ==============================================================================
+-- CRITICAL SECURITY NOTE:
+-- PostgreSQL superusers (e.g. 'postgres') and roles with 'BYPASSRLS' attribute
+-- bypass all Row-Level Security policies by design.
+-- In Staging and Production, the application MUST connect using this unprivileged
+-- application role so that FORCE ROW LEVEL SECURITY is strictly respected.
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'edusaas_app_user') THEN
+        CREATE ROLE edusaas_app_user WITH 
+            LOGIN 
+            PASSWORD 'edusaas_secure_app_password_2026' 
+            NOSUPERUSER 
+            NOBYPASSRLS 
+            NOCREATEDB 
+            NOCREATEROLE;
+    END IF;
+END $$;
+
+GRANT USAGE ON SCHEMA public TO edusaas_app_user;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO edusaas_app_user;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO edusaas_app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO edusaas_app_user;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO edusaas_app_user;
