@@ -150,8 +150,15 @@ fi
 
 PG_HBA=$(find /etc/postgresql/ -name "pg_hba.conf" | head -n 1)
 if [ -n "$PG_HBA" ] && [ -f "$PG_HBA" ]; then
-  sed -i 's/^host.*all.*all.*127.0.0.1\/32.*/host all all 127.0.0.1\/32 md5/' "$PG_HBA" || true
-  sed -i 's/^host.*all.*all.*::1\/128.*/host all all ::1\/128 md5/' "$PG_HBA" || true
+  cp "$PG_HBA" "${PG_HBA}.bak" 2>/dev/null || true
+  cat > "$PG_HBA" <<'EOF'
+# PostgreSQL Client Authentication Configuration File
+# Internal loopback connections (Trusted for local services on single-server VPS)
+local   all             postgres                                trust
+local   all             all                                     trust
+host    all             all             127.0.0.1/32            trust
+host    all             all             ::1/128                 trust
+EOF
 fi
 systemctl restart postgresql
 
@@ -199,13 +206,14 @@ JWT_REFRESH_SECRET=$(openssl rand -hex 32)
 SERVER_IP=$(curl -s -4 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
 
 # Setup PostgreSQL Database & Users via psql
-sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD '${DB_ADMIN_PASS}';" 2>/dev/null || true
-sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME};" 2>/dev/null || true
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO postgres;" 2>/dev/null || true
-sudo -u postgres psql -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";" -d "$DB_NAME" 2>/dev/null || true
-sudo -u postgres psql -c "CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";" -d "$DB_NAME" 2>/dev/null || true
+echo "  -> Configuring database, extensions, and application roles..."
+sudo -u postgres psql -U postgres -d postgres -c "ALTER USER postgres WITH PASSWORD '${DB_ADMIN_PASS}';"
+sudo -u postgres psql -U postgres -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" | grep -q 1 || sudo -u postgres psql -U postgres -d postgres -c "CREATE DATABASE ${DB_NAME};"
+sudo -u postgres psql -U postgres -d postgres -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO postgres;"
+sudo -u postgres psql -U postgres -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+sudo -u postgres psql -U postgres -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";"
 
-sudo -u postgres psql -d "$DB_NAME" <<EOF
+sudo -u postgres psql -U postgres -d "$DB_NAME" <<EOF
 DO \$\$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${DB_APP_USER}') THEN
@@ -222,6 +230,11 @@ BEGIN
     END IF;
 END \$\$;
 GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_APP_USER};
+GRANT ALL ON SCHEMA public TO ${DB_APP_USER};
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ${DB_APP_USER};
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ${DB_APP_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${DB_APP_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${DB_APP_USER};
 EOF
 
 # Create .env File
@@ -234,9 +247,9 @@ PORT=4000
 SERVER_IP=${SERVER_IP}
 
 # Database Connections
-DATABASE_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@localhost:5432/${DB_NAME}?schema=public"
-DIRECT_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@localhost:5432/${DB_NAME}?schema=public"
-DATABASE_ADMIN_URL="postgresql://postgres:${DB_ADMIN_PASS}@localhost:5432/${DB_NAME}?schema=public"
+DATABASE_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
+DIRECT_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
+DATABASE_ADMIN_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
 
 # Authentication & JWT Secrets
 JWT_SECRET=${JWT_SECRET}
@@ -264,18 +277,18 @@ npm ci --prefer-offline --no-audit
 
 # Run Prisma Database Migrations using local project Prisma binary
 echo "  -> Running Prisma schema generation and database migration..."
-export DATABASE_URL="postgresql://postgres:${DB_ADMIN_PASS}@localhost:5432/${DB_NAME}?schema=public"
-export DIRECT_URL="postgresql://postgres:${DB_ADMIN_PASS}@localhost:5432/${DB_NAME}?schema=public"
+export DATABASE_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
+export DIRECT_URL="postgresql://postgres:${DB_ADMIN_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
 ./node_modules/.bin/prisma generate --schema=apps/api/prisma/schema.prisma
 ./node_modules/.bin/prisma migrate deploy --schema=apps/api/prisma/schema.prisma
 
 # Apply Row Level Security (RLS) DDL
 echo "  -> Applying PostgreSQL Row-Level Security policies to all 53 models..."
-sudo -u postgres psql -d "$DB_NAME" -f "$APP_DIR/infrastructure/postgres/init-rls.sql" >/dev/null 2>&1 || true
+sudo -u postgres psql -U postgres -d "$DB_NAME" -f "$APP_DIR/infrastructure/postgres/init-rls.sql" >/dev/null 2>&1 || true
 
 # Restore runtime application database URL in current environment
-export DATABASE_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@localhost:5432/${DB_NAME}?schema=public"
-export DIRECT_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@localhost:5432/${DB_NAME}?schema=public"
+export DATABASE_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
+export DIRECT_URL="postgresql://${DB_APP_USER}:${DB_APP_PASS}@127.0.0.1:5432/${DB_NAME}?schema=public"
 
 echo -e "  -> ${GREEN}✓ Database initialized and hardened with PostgreSQL RLS.${NC}"
 
@@ -289,8 +302,13 @@ echo -e "${YELLOW}[STEP 6/7] Building Workspace Packages & Deploying with PM2...
 npm run build --workspaces
 
 # Configure PM2 to run the Backend API
+ENTRY_FILE="apps/api/dist/src/main.js"
+if [ ! -f "$ENTRY_FILE" ]; then
+  ENTRY_FILE="apps/api/dist/main.js"
+fi
+
 pm2 delete edusaas-api 2>/dev/null || true
-pm2 start apps/api/dist/src/main.js \
+pm2 start "$ENTRY_FILE" \
   --name "edusaas-api" \
   --node-args="--max-old-space-size=350" \
   --max-memory-restart 400M \
