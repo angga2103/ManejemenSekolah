@@ -310,9 +310,19 @@ echo -e "  -> ${GREEN}✓ Database initialized and hardened with PostgreSQL RLS.
 echo ""
 echo -e "${YELLOW}[STEP 6/7] Building Workspace Packages & Deploying with PM2...${NC}"
 
-# Build shared packages, API, and Web Portal
+# Build shared packages, API, and Web Portal in dependency order
 export NODE_OPTIONS="--max-old-space-size=512"
-npm run build --workspaces --if-present
+echo "  -> [1/4] Compiling @edusaas/shared-types..."
+npm run build --workspace=@edusaas/shared-types
+
+echo "  -> [2/4] Compiling @edusaas/api-contracts..."
+npm run build --workspace=@edusaas/api-contracts
+
+echo "  -> [3/4] Compiling @edusaas/api (NestJS API)..."
+npm run build --workspace=@edusaas/api
+
+echo "  -> [4/4] Compiling @edusaas/web (React Web Portal)..."
+npm run build --workspace=@edusaas/web
 
 # Configure PM2 to run the Backend API
 ENTRY_FILE="apps/api/dist/src/main.js"

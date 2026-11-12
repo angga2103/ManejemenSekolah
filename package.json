@@ -4,11 +4,12 @@
   "private": true,
   "description": "Integrated School & Pesantren Management SaaS - Multi-Tenant Education Platform",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build:packages": "npm run build --workspace=@edusaas/shared-types && npm run build --workspace=@edusaas/api-contracts",
+    "build": "npm run build:packages && npm run build --workspace=@edusaas/api && npm run build --workspace=@edusaas/web",
     "test": "npm run test --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,yml,yaml}\"",
